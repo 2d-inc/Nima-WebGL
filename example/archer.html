@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2Dimensions - Archer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <!-- If you want to use the minified version...
+    <script src="../source/gl-matrix.js"></script>
+    <script src="../build/Nima.min.js"></script>
+    -->
+    <script src="../source/gl-matrix.js"></script>
+
+    <script src="../source/Graphics.js" compile></script>
+    <script src="../source/BinaryReader.js" compile></script>
+    <script src="../source/ActorLoader.js" compile></script>
+    <script src="../source/Actor.js" compile></script>
+    <script src="../source/ActorNode.js" compile></script>
+    <script src="../source/ActorImage.js" compile></script>
+    <script src="../source/ActorBone.js" compile></script>
+    <script src="../source/ActorRootBone.js" compile></script>
+    <script src="../source/ActorIKTarget.js" compile></script>
+    <script src="../source/Animation.js" compile></script>
+    <script src="../source/BezierAnimationCurve.js" compile></script>-->
+
+    <!-- example implementation is in here -->
+    <script src="Archer.js" compile></script>
+
+    <style>
+    body
+    {
+        margin:0;
+        padding:0;
+    }
+    </style>
+    
+    <script>
+        var archer;
+        function onLoad()
+        {
+            archer = new Archer(document.getElementById("canvas"));
+            archer.load("Archer.nima", function(error)
+                {
+                    if(error)
+                    {
+                        console.log("failed to load actor file...", error);
+                    }
+                });
+
+            archer.setSize(684, 387);
+            document.body.addEventListener('dragover', function(evt)
+            {
+                evt.stopPropagation();
+                evt.preventDefault();
+                evt.dataTransfer.dropEffect = "copy";
+            }, true);
+
+            document.body.addEventListener('dragleave', function(evt)
+            {
+                evt.stopPropagation();
+                evt.preventDefault();
+            });
+
+            document.body.addEventListener("drop", function(evt)
+            {
+                // Reload another actor by dragging and dropping the file in.
+                evt.stopPropagation();
+                evt.preventDefault();
+
+                var files = evt.dataTransfer.files;
+                
+                archer.load(files[0], function(error)
+                    {
+                        if(error)
+                        {
+                            console.log("oh no", error);
+                        }
+                    });
+            }, true);
+        }
+    </script>
+</head>
+<body onload="onLoad()">
+    <canvas id="canvas" style="position:absolute;margin:0;padding:0;"></canvas>
+</body>
+</html>
+    
