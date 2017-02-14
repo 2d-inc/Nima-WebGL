@@ -46,6 +46,10 @@ var Animation = (function ()
 		{
 			var animatedNode = nodes[i];
 			var node = actorNodes[animatedNode._NodeIndex];
+			if(!node)
+			{
+				continue;
+			}
 			var properties = animatedNode._Properties;
 			for(var j = 0; j < properties.length; j++)
 			{

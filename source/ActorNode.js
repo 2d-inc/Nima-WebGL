@@ -156,7 +156,10 @@ var ActorNode = (function ()
 		if(this._ParentIdx !== undefined)
 		{
 			this._Parent = nodes[this._ParentIdx];
-			this._Parent._Children.push(this);
+			if(this._Parent)
+			{
+				this._Parent._Children.push(this);
+			}
 		}
 	};
 

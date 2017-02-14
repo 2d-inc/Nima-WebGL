@@ -111,7 +111,10 @@ var Actor = (function ()
 		for(var i = 0; i < nodes.length; i++)
 		{
 			var node = nodes[i];
-			node.updateTransforms();
+			if(node)
+			{
+				node.updateTransforms();
+			}
 		}
 
 		if(runSolvers)
@@ -137,7 +140,10 @@ var Actor = (function ()
 			for(var i = 0; i < nodes.length; i++)
 			{
 				var node = nodes[i];
-				node.updateTransforms();
+				if(node)
+				{
+					node.updateTransforms();
+				}
 			}
 
 			for(var i = 0; i < solvers.length; i++)
@@ -151,7 +157,10 @@ var Actor = (function ()
 		for(var i = 0; i < nodes.length; i++)
 		{
 			var node = nodes[i];
-			node.advance(seconds);
+			if(node)
+			{
+				node.advance(seconds);
+			}
 		}
 
 		if(this._IsImageSortDirty)
@@ -205,6 +214,11 @@ var Actor = (function ()
 		for(var i = 0; i < nodes.length; i++)
 		{
 			var node = nodes[i];
+			if(!node)
+			{
+				this._Nodes.push(null);
+				continue;
+			}
 			var instanceNode = node.makeInstance(this);
 			switch(instanceNode.constructor)
 			{

@@ -111,8 +111,8 @@ var ActorLoader = (function ()
 			if(node)
 			{
 				node._Index = actorNodes.length;
-				actorNodes.push(node);
 			}
+			actorNodes.push(node);
 		};
 
 		actor.resolveHierarchy();
@@ -180,7 +180,17 @@ var ActorLoader = (function ()
 			{
 				var nodeIndex = reader.readUint16();
 				var node = actor._Nodes[nodeIndex];
-				if(node)
+				if(!node)
+				{
+					// Bad node was loaded, read past the animation data.
+ 					// Note this only works after version 12 as we can read by the entire set of properties.
+ 					var props = reader.readUint16();
+ 					for(var j = 0; j < props; j++)
+ 					{
+ 						var propertyBlock = _ReadNextBlock(reader, function(err) {actor.error = err;});
+ 					}
+				}
+				else
 				{
 					var animatedNode = new AnimatedNode(nodeIndex);
 					animation._Nodes.push(animatedNode);
