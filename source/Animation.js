@@ -4,6 +4,7 @@ var Animation = (function ()
 	{
 		this._Actor = actor;
 		this._Components = [];
+		this._TriggerComponents = [];
 		this._DisplayStart = 0;
 		this._DisplayEnd = 0;
 
@@ -36,6 +37,67 @@ var Animation = (function ()
 		}
 		return start;
 	}
+
+var tc = 0;
+	Animation.prototype.triggerEvents = function(fromTime, toTime)
+	{
+		var keyedTriggerComponents = this._TriggerComponents;
+		for(var i = 0; i < keyedTriggerComponents.length; i++)
+		{
+			var keyedComponent = keyedTriggerComponents[i];
+			var properties = keyedComponent._Properties;
+			for(var j = 0; j < properties.length; j++)
+			{
+				var property = properties[j];
+				switch(property._Type)
+				{
+					case AnimatedProperty.Properties.Trigger:
+						var keyFrames = property._KeyFrames;
+
+						var kfl = keyFrames.length;
+						if(kfl === 0)
+						{
+							continue;
+						}
+
+						var triggered = [];
+						var idx = keyFrameLocation(toTime, keyFrames, 0, keyFrames.length-1);
+						if(idx === 0)
+						{
+							if(keyFrames.length > 0 && keyFrames[0]._Time === toTime)
+							{
+								triggered.push(keyFrames[0]);
+							}
+						}
+						else
+						{
+							for(var k = idx-1; k >= 0; k--)
+							{
+								var frame = keyFrames[k];	
+								if(frame._Time > fromTime)
+								{
+									triggered.push(frame);
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						if(triggered.length)
+						{
+							document.getElementById("sound").currentTime = 0;
+							document.getElementById("sound").play();
+							//console.log(document.getElementById("sound"));
+							console.log("TRIGGER", triggered, tc++, fromTime, toTime);
+						}
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	};
 
 	Animation.prototype.apply = function(time, actor, mix)
 	{
@@ -174,9 +236,9 @@ var Animation = (function ()
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.DrawOrder:
-						if(this._LastSetDrawOrder != value)
+						if(actor._LastSetDrawOrder != value)
 						{
-							this._LastSetDrawOrder = value;
+							actor._LastSetDrawOrder = value;
 							for(var i = 0; i < value.length; i++)
 							{
 								var v = value[i];
@@ -278,7 +340,8 @@ var AnimatedProperty = (function ()
 		DrawOrder:7,
 		Length:8,
 		VertexDeform:9,
-		IKStrength:10
+		IKStrength:10,
+		Trigger:11
 	};
 
 
@@ -385,6 +448,127 @@ var KeyFrame = (function ()
 	};*/
 
 	return KeyFrame;
+}());
+
+var AnimationInstance = (function ()
+{
+	function AnimationInstance(animation)
+	{
+		this._Animation = animation;
+		this._Time = 0;
+
+		this._Min = 0;
+		this._Max = animation._Duration;
+		this._Loop = animation._Loop;
+		this._Range = this._Max - this._Min;
+	}
+
+	Object.defineProperties(AnimationInstance.prototype,
+	{
+		loop:
+		{
+			get: function()
+			{
+				return this._Loop;
+			},
+			set: function(value)
+			{
+				this._Loop = value;
+			}
+		},
+		time:
+		{
+			get: function()
+			{
+				return this._Time;
+			},
+			set: function(newTime)
+			{
+				var delta = newTime - this._Time;
+				var time = this._Time + (delta % this._Range);
+
+				if(time < this._Min)
+				{
+					if(this._Loop)
+					{
+						time = this._Max - (this._Min - time);	
+					}
+					else
+					{
+						time = this._Min;
+					}
+				}
+				else if(time > this._Max)
+				{
+					if(this._Loop)
+					{
+						time = this._Min + (time - this._Max);
+					}
+					else
+					{
+						time = this._Max;
+					}
+				}
+				this._Time = time;
+			}
+		}
+	});
+
+	AnimationInstance.prototype.advance = function(seconds)
+	{
+		var time = this._Time;
+		time += seconds%this._Range;
+		if(time < this._Min)
+		{
+			if(this._Loop)
+			{
+				this._Animation.triggerEvents(time, this._Time);
+				time = this._Max - (this._Min - time);
+				this._Animation.triggerEvents(time, this._Max);
+			}
+			else
+			{
+				time = this._Min;
+				if(this._Time != time)
+				{
+					this._Animation.triggerEvents(this._Min, this._Time);
+				}
+			}
+		}
+		else if(time > this._Max)
+		{
+			if(this._Loop)
+			{
+				this._Animation.triggerEvents(time, this._Time);
+				time = this._Min + (time - this._Max);
+				this._Animation.triggerEvents(this._Min-0.001, time);
+			}
+			else
+			{
+				time = this._Max;
+				if(this._Time != time)
+				{
+					this._Animation.triggerEvents(this._Time, this._Max);
+				}
+			}
+		}
+		else if(time > this._Time)
+		{
+			this._Animation.triggerEvents(this._Time, time);
+		}
+		else
+		{
+			this._Animation.triggerEvents(time, this._Time);
+		}
+		this._Time = time;
+	};
+
+	AnimationInstance.prototype.apply = function(actor, mix)
+	{
+		this._Animation.apply(this._Time, actor, mix);
+	};
+
+	return AnimationInstance;
 }());
 /*
 var AnimationInstance = (function ()

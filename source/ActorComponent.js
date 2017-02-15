@@ -53,7 +53,7 @@ var ActorComponent = (function ()
 		if(this._ParentIdx !== undefined)
 		{
 			this._Parent = components[this._ParentIdx];
-			if(this._Parent && this._Parent._Children)
+			if(this.isNode && this._Parent && this._Parent._Children)
 			{
 				this._Parent._Children.push(this);
 			}

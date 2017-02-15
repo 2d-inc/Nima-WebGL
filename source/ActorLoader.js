@@ -12,7 +12,8 @@ var ActorLoader = (function ()
 		Animations:8,
 		Atlases:9,
 		Atlas:10,
-		ActorIKTarget:11
+		ActorIKTarget:11,
+		ActorEvent:12
 	};
 
 	function ActorLoader()
@@ -92,6 +93,9 @@ var ActorLoader = (function ()
 			var component = null;
 			switch(block.type)
 			{
+				case _BlockTypes.ActorEvent:
+					component = _ReadActorEvent(block.reader, new ActorEvent());
+					break;
 				case _BlockTypes.ActorNode:
 					component = _ReadActorNode(block.reader, new ActorNode());
 					break;
@@ -152,7 +156,16 @@ var ActorLoader = (function ()
 				else
 				{
 					var animatedComponent = new AnimatedComponent(componentIndex);
-					animation._Components.push(animatedComponent);
+					if(component.constructor === ActorEvent)
+					{
+						// N.B. ActorEvents currently only keyframe their trigger so we cn optimize them into a separate array.
+						animation._TriggerComponents.push(animatedComponent);	
+					}
+					else
+					{
+						animation._Components.push(animatedComponent);
+					}
+					
 
 					var props = reader.readUint16();
 					for(var j = 0; j < props; j++)
@@ -186,6 +199,7 @@ var ActorLoader = (function ()
 							case AnimatedProperty.Properties.Length:
 							case AnimatedProperty.Properties.VertexDeform:
 							case AnimatedProperty.Properties.IKStrength:
+							case AnimatedProperty.Properties.Trigger:
 								validProperty = true;
 								break;
 							default:
@@ -209,35 +223,44 @@ var ActorLoader = (function ()
 							// On newer version we write the interpolation first.
 							if(actor.dataVersion >= 11)
 							{
-								var hasInterpolation = propertyType !== AnimatedProperty.Properties.DrawOrder;
-								if(hasInterpolation)
+								switch(propertyType)
 								{
-									keyFrame._Type = propertyReader.readUint8();
-									switch(keyFrame._Type)
-									{
-										case KeyFrame.Type.Asymmetric:
-										case KeyFrame.Type.Mirrored:
-										case KeyFrame.Type.Disconnected:
-											keyFrame._InFactor = propertyReader.readFloat64();
-											keyFrame._InValue = propertyReader.readFloat32();
-											keyFrame._OutFactor = propertyReader.readFloat64();
-											keyFrame._OutValue = propertyReader.readFloat32();
-											break;
+									case AnimatedProperty.Properties.Trigger:
+									case AnimatedProperty.Properties.DrawOrder:
+										// These do not interpolate.
+										break;
+									default:
+										keyFrame._Type = propertyReader.readUint8();
+										switch(keyFrame._Type)
+										{
+											case KeyFrame.Type.Asymmetric:
+											case KeyFrame.Type.Mirrored:
+											case KeyFrame.Type.Disconnected:
+												keyFrame._InFactor = propertyReader.readFloat64();
+												keyFrame._InValue = propertyReader.readFloat32();
+												keyFrame._OutFactor = propertyReader.readFloat64();
+												keyFrame._OutValue = propertyReader.readFloat32();
+												break;
 
-										case KeyFrame.Type.Hold:
-											keyFrame._InFactor = propertyReader.readFloat64();
-											keyFrame._InValue = propertyReader.readFloat32();
-											break;
+											case KeyFrame.Type.Hold:
+												keyFrame._InFactor = propertyReader.readFloat64();
+												keyFrame._InValue = propertyReader.readFloat32();
+												break;
 
-										default:
-											keyFrame._InValue = keyFrame._Value;
-											keyFrame._OutValue = keyFrame._Value;
-											break;
-									}
+											default:
+												keyFrame._InValue = keyFrame._Value;
+												keyFrame._OutValue = keyFrame._Value;
+												break;
+										}
+										break;
 								}
 							}
 
-							if(propertyType === AnimatedProperty.Properties.DrawOrder)
+							if(propertyType === AnimatedProperty.Properties.Trigger)
+							{
+								// No value on keyframe.
+							}
+							else if(propertyType === AnimatedProperty.Properties.DrawOrder)
 							{
 								var orderedImages = propertyReader.readUint16();
 								var orderValue = [];
@@ -512,6 +535,12 @@ var ActorLoader = (function ()
 	{
 		component._Name = reader.readString();
 		component._ParentIdx = reader.readUint16();
+		return component;
+	}
+
+	function _ReadActorEvent(reader, component)
+	{
+		_ReadActorComponent(reader, component);
 		return component;
 	}
 

@@ -204,6 +204,16 @@ var Actor = (function ()
 		return null;
 	};
 
+	Actor.prototype.getAnimationInstance = function(name)
+	{
+		var animation = this.getAnimation(name);
+		if(!animation)
+		{
+			return null;
+		}
+		return new AnimationInstance(animation);
+	};
+
 	Actor.prototype.makeInstance = function()
 	{
 		var actorInstance = new Actor();

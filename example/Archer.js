@@ -370,24 +370,26 @@ var Archer = (function ()
 			var run = _This._RunAnimation;
 			var soar = _This._SoarAnimation;
 			var fall = _This._FallAnimation;
+			var lastWalkTime = _This._WalkTime;
 			if(_This._HorizontalSpeed === 0 && _This._WalkMix === 0 && _This._RunMix === 0)
 			{
 				_This._WalkTime = _This._RunTime = 0.0;
 			}
 			else
 			{
-				_This._WalkTime = (_This._WalkTime + elapsed*0.9 * Math.sign(_This._HorizontalSpeed) * scaleX)%walk._Duration;
-				if(_This._WalkTime < 0.0)
+				walk.advance(elapsed*0.9 * Math.sign(_This._HorizontalSpeed) * scaleX * (_This._Fast ? 1.2 : 1.0));
+				//_This._WalkTime = (_This._WalkTime + elapsed*0.9 * Math.sign(_This._HorizontalSpeed) * scaleX)%walk._Duration;
+				/*if(_This._WalkTime < 0.0)
 				{
 					_This._WalkTime += walk._Duration;
-				}
-				_This._RunTime = _This._WalkTime/walk._Duration * run._Duration;
+				}*/
+				_This._RunTime = walk.time/walk._Animation._Duration * run._Duration;
 			}
 			
 			if(_This._WalkMix != 0.0)
 			{
 				//walk.setTime(walk.getTime() + elapsed*0.9 * Math.sign(_This._HorizontalSpeed) * scaleX);
-				walk.apply(_This._WalkTime, actor, _This._WalkMix);
+				walk.apply(actor, _This._WalkMix);
 			}
 			if(_This._RunMix != 0.0)
 			{
@@ -606,7 +608,7 @@ var Archer = (function ()
 				this._FireAnimation = actorInstance.getAnimation("Fire");
 				this._ReloadAnimation = actorInstance.getAnimation("Reload");
 				this._WalkToIdle = actorInstance.getAnimation("WalkToIdle");
-				this._WalkAnimation = actorInstance.getAnimation("Walk");
+				this._WalkAnimation = actorInstance.getAnimationInstance("Walk");
 				this._RunAnimation = actorInstance.getAnimation("Run");
 				this._IdleAnimation = actorInstance.getAnimation("Idle");
 				this._JetOn = actorInstance.getAnimation("JetOn");
@@ -652,7 +654,8 @@ var Archer = (function ()
 						}
 
 						// Apply first frame of walk to extract the aim while walking lookup.
-						this._WalkAnimation.apply(0.0, actor, 1.0);
+						this._WalkAnimation.time = 0.0;
+						this._WalkAnimation.apply(actor, 1.0);
 						for(var i = 0; i < _AimWalkingLookup.length; i++)
 						{
 							var position = i / (_AimWalkingLookup.length-1) * aim._Duration;
