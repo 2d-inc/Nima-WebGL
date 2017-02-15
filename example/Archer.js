@@ -45,7 +45,6 @@ var Archer = (function ()
 		this._RunTime = 0.0;
 		this._SoarTime = 0.0;
 		this._FallTime = 0.0;
-		this._WalkTime = 0.0;
 		this._LandTime = 0.0;
 		this._JumpTime = 0.0;
 		this._JetOffTime = 0.0;
@@ -60,10 +59,6 @@ var Archer = (function ()
 		this._IsReloadReceding = false;
 
 		var _This = this;
-		/*window.addEventListener("focus", function()
-		{
-			_ScheduleAdvance(_This);
-		});*/
 
 		_ScheduleAdvance(_This);
 		_Advance(_This);
@@ -74,7 +69,6 @@ var Archer = (function ()
 			// 65 A
 			// 39 right
 			// 37 left
-			//console.log("D", ev.keyCode);
 			switch(ev.keyCode)
 			{
 				case 32:
@@ -100,7 +94,6 @@ var Archer = (function ()
 		});
 		document.addEventListener("keyup", function(ev)
 		{
-			//console.log("UP", ev.keyCode);
 			switch(ev.keyCode)
 			{
 				case 16: // shift
@@ -137,7 +130,6 @@ var Archer = (function ()
 	{
 		_ScreenMouse[0] = ev.clientX;
 		_ScreenMouse[1] = ev.clientY;
-		//console.log(ev.clientX, ev.clientY);
 	});
 
 
@@ -145,7 +137,6 @@ var Archer = (function ()
 	document.addEventListener("mousedown", function(ev)
 	{
 		_FireNext = true;
-		//console.log(ev.clientX, ev.clientY);
 	});
 
 	function _Advance(_This)
@@ -200,7 +191,7 @@ var Archer = (function ()
 			}
 
 			var mixSpeed = 3.5;
-			if(_This._HorizontalSpeed !== 0 && _This._JetSpeed === 0)
+			if(_This._OnGround && _This._HorizontalSpeed !== 0 && _This._JetSpeed === 0)
 			{
 				if(_This._Fast)
 				{
@@ -370,10 +361,10 @@ var Archer = (function ()
 			var run = _This._RunAnimation;
 			var soar = _This._SoarAnimation;
 			var fall = _This._FallAnimation;
-			var lastWalkTime = _This._WalkTime;
-			if(_This._HorizontalSpeed === 0 && _This._WalkMix === 0 && _This._RunMix === 0)
+			if((_This._HorizontalSpeed === 0 || !_This._OnGround) && _This._WalkMix === 0 && _This._RunMix === 0)
 			{
-				_This._WalkTime = _This._RunTime = 0.0;
+				walk.time = 0.0;
+				_This._RunTime = 0.0;
 			}
 			else
 			{
@@ -418,7 +409,7 @@ var Archer = (function ()
 				_This._BoostBackward.apply(_This._BoostBackwardTime, actor, -_This._BoostMix);
 			}
 
-			if(_This._HorizontalSpeed === 0 && _This._WalkToIdleTime !== _This._WalkToIdle._Duration)
+			if(_This._OnGround && _This._HorizontalSpeed === 0 && _This._WalkToIdleTime < _This._WalkToIdle._Duration)
 			{
 				_This._WalkToIdleTime += elapsed;
 				_This._WalkToIdle.apply(_This._WalkToIdleTime, actor, Math.min(1.0, _This._WalkToIdleTime/_This._WalkToIdle._Duration));
@@ -599,6 +590,22 @@ var Archer = (function ()
 		
 		this._Actor = actor;
 		this._ActorInstance = actorInstance;
+
+		var archer = this;
+		this._ActorInstance.addEventListener("animationEvent", function(event)
+		{
+			switch(event.name)
+			{
+				case "Step":
+					// Only play the step sound if the run or walk animation is mixed enough over a threshold.
+					if(archer._WalkMix > 0.5 || archer._RunMix > 0.5)
+					{
+						document.getElementById("sound").currentTime = 0;
+						document.getElementById("sound").play();
+					}
+					break;
+			}
+		});
 
 		if(actorInstance)
 		{

@@ -2,6 +2,8 @@ var Actor = (function ()
 {
 	function Actor()
 	{
+		Dispatcher.call(this);
+
 		this._Components = [];
 		this._Nodes = [];
 		this._Images = [];
@@ -24,6 +26,8 @@ var Actor = (function ()
 		}
 	};
 	
+	Dispatcher.subclass(Actor);
+
 	Actor.prototype.resolveHierarchy = function(graphics)
 	{
 		var components = this._Components;
@@ -211,7 +215,7 @@ var Actor = (function ()
 		{
 			return null;
 		}
-		return new AnimationInstance(animation);
+		return new AnimationInstance(this, animation);
 	};
 
 	Actor.prototype.makeInstance = function()

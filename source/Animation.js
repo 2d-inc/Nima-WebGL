@@ -38,8 +38,7 @@ var Animation = (function ()
 		return start;
 	}
 
-var tc = 0;
-	Animation.prototype.triggerEvents = function(fromTime, toTime)
+	Animation.prototype.triggerEvents = function(actorComponents, fromTime, toTime, triggered)
 	{
 		var keyedTriggerComponents = this._TriggerComponents;
 		for(var i = 0; i < keyedTriggerComponents.length; i++)
@@ -60,13 +59,19 @@ var tc = 0;
 							continue;
 						}
 
-						var triggered = [];
 						var idx = keyFrameLocation(toTime, keyFrames, 0, keyFrames.length-1);
 						if(idx === 0)
 						{
 							if(keyFrames.length > 0 && keyFrames[0]._Time === toTime)
 							{
-								triggered.push(keyFrames[0]);
+								var component = actorComponents[keyedComponent._ComponentIndex];
+								triggered.push({
+									name:component._Name,
+									component:component,
+									propertyType:property._Type,
+									keyFrameTime:toTime,
+									elapsed:0
+								});
 							}
 						}
 						else
@@ -76,20 +81,20 @@ var tc = 0;
 								var frame = keyFrames[k];	
 								if(frame._Time > fromTime)
 								{
-									triggered.push(frame);
+									var component = actorComponents[keyedComponent._ComponentIndex];
+									triggered.push({
+										name:component._Name,
+										component:component,
+										propertyType:property._Type,
+										keyFrameTime:frame._Time,
+										elapsed:toTime-frame._Time
+									});
 								}
 								else
 								{
 									break;
 								}
 							}
-						}
-						if(triggered.length)
-						{
-							document.getElementById("sound").currentTime = 0;
-							document.getElementById("sound").play();
-							//console.log(document.getElementById("sound"));
-							console.log("TRIGGER", triggered, tc++, fromTime, toTime);
 						}
 						break;
 					default:
@@ -452,8 +457,10 @@ var KeyFrame = (function ()
 
 var AnimationInstance = (function ()
 {
-	function AnimationInstance(animation)
+	function AnimationInstance(actor, animation)
 	{
+		Dispatcher.call(this);
+		this._Actor = actor;
 		this._Animation = animation;
 		this._Time = 0;
 
@@ -462,6 +469,8 @@ var AnimationInstance = (function ()
 		this._Loop = animation._Loop;
 		this._Range = this._Max - this._Min;
 	}
+
+	Dispatcher.subclass(AnimationInstance);
 
 	Object.defineProperties(AnimationInstance.prototype,
 	{
@@ -516,22 +525,24 @@ var AnimationInstance = (function ()
 
 	AnimationInstance.prototype.advance = function(seconds)
 	{
+		var triggeredEvents = [];
+		var actorComponents = this._Actor._Components;
 		var time = this._Time;
 		time += seconds%this._Range;
 		if(time < this._Min)
 		{
 			if(this._Loop)
 			{
-				this._Animation.triggerEvents(time, this._Time);
+				this._Animation.triggerEvents(actorComponents, time, this._Time, triggeredEvents);
 				time = this._Max - (this._Min - time);
-				this._Animation.triggerEvents(time, this._Max);
+				this._Animation.triggerEvents(actorComponents, time, this._Max, triggeredEvents);
 			}
 			else
 			{
 				time = this._Min;
 				if(this._Time != time)
 				{
-					this._Animation.triggerEvents(this._Min, this._Time);
+					this._Animation.triggerEvents(actorComponents, this._Min, this._Time, triggeredEvents);
 				}
 			}
 		}
@@ -539,26 +550,33 @@ var AnimationInstance = (function ()
 		{
 			if(this._Loop)
 			{
-				this._Animation.triggerEvents(time, this._Time);
+				this._Animation.triggerEvents(actorComponents, time, this._Time, triggeredEvents);
 				time = this._Min + (time - this._Max);
-				this._Animation.triggerEvents(this._Min-0.001, time);
+				this._Animation.triggerEvents(actorComponents, this._Min-0.001, time, triggeredEvents);
 			}
 			else
 			{
 				time = this._Max;
 				if(this._Time != time)
 				{
-					this._Animation.triggerEvents(this._Time, this._Max);
+					this._Animation.triggerEvents(actorComponents, this._Time, this._Max, triggeredEvents);
 				}
 			}
 		}
 		else if(time > this._Time)
 		{
-			this._Animation.triggerEvents(this._Time, time);
+			this._Animation.triggerEvents(actorComponents, this._Time, time, triggeredEvents);
 		}
 		else
 		{
-			this._Animation.triggerEvents(time, this._Time);
+			this._Animation.triggerEvents(actorComponents, time, this._Time, triggeredEvents);
+		}
+
+		for(var i = 0; i < triggeredEvents.length; i++)
+		{
+			var event = triggeredEvents[i];
+			this.dispatch("animationEvent", event);
+			this._Actor.dispatch("animationEvent", event);
 		}
 		this._Time = time;
 	};
