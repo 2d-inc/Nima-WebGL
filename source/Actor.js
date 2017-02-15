@@ -2,10 +2,12 @@ var Actor = (function ()
 {
 	function Actor()
 	{
+		this._Components = [];
 		this._Nodes = [];
 		this._Images = [];
 		this._Atlases = [];
 		this._RootNode = new ActorNode();
+		this._Components.push(this._RootNode);
 		this._Nodes.push(this._RootNode);
 		this._Animations = [];
 		this._Solvers = [];
@@ -24,20 +26,24 @@ var Actor = (function ()
 	
 	Actor.prototype.resolveHierarchy = function(graphics)
 	{
-		var nodes = this._Nodes;
-		for(var i = 1; i < nodes.length; i++)
+		var components = this._Components;
+		for(var i = 1; i < components.length; i++)
 		{
-			var node = nodes[i];
-			if(node != null)
+			var component = components[i];
+			if(component != null)
 			{
-				node.resolveNodeIndices(nodes);
-				switch(node.constructor)
+				component.resolveComponentIndices(components);
+				if(component.isNode)
+				{
+					this._Nodes.push(component);
+				}
+				switch(component.constructor)
 				{
 					case ActorImage:
-						this._Images.push(node);
+						this._Images.push(component);
 						break;
 					case ActorIKTarget:
-						this._Solvers.push(node);
+						this._Solvers.push(component);
 						break;
 				}
 			}
@@ -66,10 +72,10 @@ var Actor = (function ()
 				graphics.deleteTexture(graphics);
 			}
 		}
-		var nodes = this._Images;
-		for(var i = 0; i < nodes.length; i++)
+		var images = this._Images;
+		for(var i = 0; i < images.length; i++)
 		{
-			nodes[i].dispose(this, graphics);
+			images[i].dispose(this, graphics);
 		}
 	};
 
@@ -85,10 +91,10 @@ var Actor = (function ()
 				atlases[i] = graphics.loadTexture(atlas);
 			}
 		}
-		var nodes = this._Images;
-		for(var i = 0; i < nodes.length; i++)
+		var images = this._Images;
+		for(var i = 0; i < images.length; i++)
 		{
-			nodes[i].initialize(this, graphics);
+			images[i].initialize(this, graphics);
 		}
 	}
 
@@ -153,13 +159,14 @@ var Actor = (function ()
 			}
 		}
 
+		var components = this._Components;
 		// Advance last (update graphics buffers and such).
-		for(var i = 0; i < nodes.length; i++)
+		for(var i = 0; i < components.length; i++)
 		{
-			var node = nodes[i];
-			if(node)
+			var component = components[i];
+			if(component)
 			{
-				node.advance(seconds);
+				component.advance(seconds);
 			}
 		}
 
@@ -207,19 +214,19 @@ var Actor = (function ()
 
 	Actor.prototype.copy = function(actor)
 	{
-		var nodes = actor._Nodes;
+		var components = actor._Components;
 		this._Animations = actor._Animations;
 		this._Atlases = actor._Atlases;
-		this._Nodes.length = 0;
-		for(var i = 0; i < nodes.length; i++)
+		this._Components.length = 0;
+		for(var i = 0; i < components.length; i++)
 		{
-			var node = nodes[i];
-			if(!node)
+			var component = components[i];
+			if(!component)
 			{
-				this._Nodes.push(null);
+				this._Components.push(null);
 				continue;
 			}
-			var instanceNode = node.makeInstance(this);
+			var instanceNode = component.makeInstance(this);
 			switch(instanceNode.constructor)
 			{
 				case ActorImage:
@@ -230,18 +237,22 @@ var Actor = (function ()
 					this._Solvers.push(instanceNode);
 					break;
 			}
-			this._Nodes.push(instanceNode);
+			if(instanceNode.isNode)
+			{
+				this._Nodes.push(instanceNode);
+			}
+			this._Components.push(instanceNode);
 		}
-		this._RootNode = this._Nodes[0];
+		this._RootNode = this._Components[0];
 
-		for(var i = 1; i < this._Nodes.length; i++)
+		for(var i = 1; i < this._Components.length; i++)
 		{
-			var node = this._Nodes[i];
-			if(node == null)
+			var component = this._Components[i];
+			if(component == null)
 			{
 				continue;
 			}
-			node.resolveNodeIndices(this._Nodes);
+			component.resolveComponentIndices(this._Components);
 		}
 
 		this._Images.sort(function(a,b)

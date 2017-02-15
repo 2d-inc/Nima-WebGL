@@ -8,7 +8,8 @@ var ActorBone = (function ()
 		this._IsConnectedToImage = false;
 	}
 
-	ActorNode.prototype.subclass(ActorBone);
+	ActorNode.defineProperties(ActorBone.prototype);
+	ActorNode.subclass(ActorBone);
 	
 	ActorBone.prototype.getTipWorldTranslation = function()
 	{

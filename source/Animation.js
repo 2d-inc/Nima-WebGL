@@ -3,7 +3,7 @@ var Animation = (function ()
 	function Animation(actor)
 	{
 		this._Actor = actor;
-		this._Nodes = [];
+		this._Components = [];
 		this._DisplayStart = 0;
 		this._DisplayEnd = 0;
 
@@ -39,18 +39,19 @@ var Animation = (function ()
 
 	Animation.prototype.apply = function(time, actor, mix)
 	{
-		var nodes = this._Nodes;
+		var components = this._Components;
 		var imix = 1.0-mix;
-		var actorNodes = actor._Nodes;
-		for(var i = 0; i < nodes.length; i++)
+		var actorComponents = actor._Components;
+		for(var i = 0; i < components.length; i++)
 		{
-			var animatedNode = nodes[i];
-			var node = actorNodes[animatedNode._NodeIndex];
-			if(!node)
+			var animatedComponent = components[i];
+			var component = actorComponents[animatedComponent._ComponentIndex];
+			if(!component)
 			{
 				continue;
 			}
-			var properties = animatedNode._Properties;
+
+			var properties = animatedComponent._Properties;
 			for(var j = 0; j < properties.length; j++)
 			{
 				var property = properties[j];
@@ -97,11 +98,11 @@ var Animation = (function ()
 					case AnimatedProperty.Properties.PosX:
 						if(mix === 1.0)
 						{
-							node._Translation[0] = value;	
+							component._Translation[0] = value;	
 						}
 						else
 						{
-							node._Translation[0] = node._Translation[0] * imix + value * mix;
+							component._Translation[0] = component._Translation[0] * imix + value * mix;
 						}
 						
 						markDirty = true;
@@ -109,66 +110,66 @@ var Animation = (function ()
 					case AnimatedProperty.Properties.PosY:
 						if(mix === 1.0)
 						{
-							node._Translation[1] = value;
+							component._Translation[1] = value;
 						}
 						else
 						{
-							node._Translation[1] = node._Translation[1] * imix + value * mix;
+							component._Translation[1] = component._Translation[1] * imix + value * mix;
 						}
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.ScaleX:
 						if(mix === 1.0)
 						{
-							node._Scale[0] = value;
+							component._Scale[0] = value;
 						}
 						else
 						{
-							node._Scale[0] = value * imix + value * mix;
+							component._Scale[0] = value * imix + value * mix;
 						}
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.ScaleY:
 						if(mix === 1.0)
 						{
-							node._Scale[1] = value;
+							component._Scale[1] = value;
 						}
 						else
 						{
-							node._Scale[1] = value * imix + value * mix;
+							component._Scale[1] = value * imix + value * mix;
 						}
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.Rotation:
 						if(mix === 1.0)
 						{
-							node._Rotation = value;
+							component._Rotation = value;
 						}
 						else
 						{
-							node._Rotation = node._Rotation * imix + value * mix;
+							component._Rotation = component._Rotation * imix + value * mix;
 						}
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.Opacity:
 						if(mix === 1.0)
 						{
-							node._Opacity = value;
+							component._Opacity = value;
 						}
 						else
 						{
-							node._Opacity = node._Opacity * imix + value * mix;
+							component._Opacity = component._Opacity * imix + value * mix;
 						}
 						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.IKStrength:
 						if(mix === 1.0)
 						{
-							node._Strength = value;
+							component._Strength = value;
 						}
 						else
 						{
-							node._Strength = node._Strength * imix + value * mix;	
+							component._Strength = component._Strength * imix + value * mix;	
 						}
 						markDirty = true;
 						break;
@@ -179,7 +180,7 @@ var Animation = (function ()
 							for(var i = 0; i < value.length; i++)
 							{
 								var v = value[i];
-								actorNodes[v.nodeIdx]._DrawOrder = v.value;
+								actorComponents[v.componentIdx]._DrawOrder = v.value;
 							}
 							actor._IsImageSortDirty = true;
 						}
@@ -188,28 +189,28 @@ var Animation = (function ()
 						markDirty = true;
 						if(mix === 1.0)
 						{
-							node._Length = value;
+							component._Length = value;
 						}
 						else
 						{
-							node._Length = node._Length * imix + value * mix;
+							component._Length = component._Length * imix + value * mix;
 						}
 						
-						for(var l = 0; l < node._Children.length; l++)
+						for(var l = 0; l < component._Children.length; l++)
 						{
-							var chd = node._Children[l];
+							var chd = component._Children[l];
 							if(chd.constructor === ActorBone)
 							{
-								chd._Translation[0] = node._Length;
+								chd._Translation[0] = component._Length;
 								chd._IsDirty = true;
 							}
 						}
 						break;
 					case AnimatedProperty.Properties.VertexDeform:
-						node._VerticesDirty = true;
-						var nv = node._NumVertices;
-						var stride = node._VertexStride;
-						var to = node._Vertices;
+						component._VerticesDirty = true;
+						var nv = component._NumVertices;
+						var stride = component._VertexStride;
+						var to = component._Vertices;
 						var from = value;
 						var tidx = 0;
 						var fidx = 0;
@@ -236,8 +237,8 @@ var Animation = (function ()
 
 				if(markDirty)
 				{
-					node._IsDirty = true;
-					node.markWorldDirty();
+					component._IsDirty = true;
+					component.markWorldDirty();
 				}
 			}
 		}
@@ -246,15 +247,15 @@ var Animation = (function ()
 	return Animation;
 }());
 
-var AnimatedNode = (function ()
+var AnimatedComponent = (function ()
 {
-	function AnimatedNode(nodeIndex)
+	function AnimatedComponent(componentIndex)
 	{
-		this._NodeIndex = nodeIndex;
+		this._ComponentIndex = componentIndex;
 		this._Properties = [];
 	}
 
-	return AnimatedNode;
+	return AnimatedComponent;
 }());
 
 var AnimatedProperty = (function ()
@@ -385,22 +386,22 @@ var KeyFrame = (function ()
 
 	return KeyFrame;
 }());
-
+/*
 var AnimationInstance = (function ()
 {
 	function AnimationInstance(animation)
 	{
 		this._Animation = animation;
-		this._Nodes = [];
+		this._Components = [];
 		this._Time = 0;
 		this._LastSetDrawOrder = null;
 
 		this._Min = animation._DisplayStart;
 		this._Max = animation._DisplayEnd;
 
-		for(var i = 0; i < animation._Nodes.length; i++)
+		for(var i = 0; i < animation._Components.length; i++)
 		{
-			this._Nodes.push(new AnimatedNodeInstance(animation._Nodes[i]))		
+			this._Components.push(new AnimatedNodeInstance(animation._Components[i]))		
 		}
 	}
 
@@ -458,13 +459,13 @@ var AnimationInstance = (function ()
 	AnimationInstance.prototype.apply = function(actor, mix)
 	{
 		var time = this._Time;
-		var nodes = this._Nodes;
+		var components = this._Components;
 		var imix = 1.0-mix;
-		for(var i = 0; i < nodes.length; i++)
+		for(var i = 0; i < components.length; i++)
 		{
-			var nodeInstance = nodes[i];
-			var node = nodeInstance._Node;
-			var properties = nodeInstance._Properties;
+			var componentInstance = components[i];
+			var node = componentInstance._Node;
+			var properties = componentInstance._Properties;
 			for(var j = 0; j < properties.length; j++)
 			{
 				var propertyInstance = properties[j];
@@ -689,4 +690,4 @@ var AnimatedPropertyInstance = (function ()
 
 
 	return AnimatedPropertyInstance;
-}());
+}());*/

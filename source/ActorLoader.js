@@ -2,7 +2,7 @@ var ActorLoader = (function ()
 {
 	var _FirstVersion = 1065353216;
 	var _BlockTypes = {
-		Nodes:1,
+		Components:1,
 		ActorNode:2,
 		ActorBone:3,
 		ActorRootBone:4,
@@ -80,83 +80,42 @@ var ActorLoader = (function ()
 		return {type:blockType, reader:new BinaryReader(uint8)};
 	}
 
-	function _ReadNodesBlock(actor, reader)
+	function _ReadComponentsBlock(actor, reader)
 	{
-		var nodeCount = reader.readUint16();
-		var actorNodes = actor._Nodes;
+		var componentCount = reader.readUint16();
+		var actorComponents = actor._Components;
 
 		// Guaranteed from the exporter to be in index order.
 		var block = null;
 		while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 		{
-			var node = null;
+			var component = null;
 			switch(block.type)
 			{
 				case _BlockTypes.ActorNode:
-					node = _ReadActorNode(block.reader, new ActorNode());
+					component = _ReadActorNode(block.reader, new ActorNode());
 					break;
 				case _BlockTypes.ActorBone:
-					node = _ReadActorBone(block.reader, new ActorBone());
+					component = _ReadActorBone(block.reader, new ActorBone());
 					break;
 				case _BlockTypes.ActorRootBone:
-					node = _ReadActorRootBone(block.reader, new ActorRootBone());
+					component = _ReadActorRootBone(block.reader, new ActorRootBone());
 					break;
 				case _BlockTypes.ActorImage:
-					node = _ReadActorImage(block.reader, new ActorImage());
+					component = _ReadActorImage(block.reader, new ActorImage());
 					break;
 				case _BlockTypes.ActorIKTarget:
-					node = _ReadActorIKTarget(block.reader, new ActorIKTarget());
+					component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
 					break;
 			}
-			if(node)
+			if(component)
 			{
-				node._Index = actorNodes.length;
+				component._Index = actorComponents.length;
 			}
-			actorNodes.push(node);
+			actorComponents.push(component);
 		};
 
 		actor.resolveHierarchy();
-		/*
-		// Resolve hierarchy.
-		for(var i = 1; i < actorNodes.length; i++)
-		{
-			var node = actorNodes[i];
-			if(node._ParentIdx !== undefined)
-			{
-				node._Parent = actorNodes[node._ParentIdx];
-				node._Parent._Children.push(node);
-				delete node._ParentIdx;
-			}
-
-			// Link up bone indices.
-			switch(node.constructor)
-			{
-				case ActorImage:
-					if(node._ConnectedBones)
-					{
-						for(var j = 0; j < node._ConnectedBones.length; j++)
-						{
-							var cb = node._ConnectedBones[j];
-							cb.node = actorNodes[cb.nodeIndex];
-							delete cb.nodeIndex;
-						}
-					}
-					break;
-
-				case ActorIKTarget:
-					if(node._InfluencedBones)
-					{
-						for(var j = 0; j < node._InfluencedBones.length; j++)
-						{
-							var nodeIndex = node._InfluencedBones[j];
-							node._InfluencedBones[j] = actorNodes[nodeIndex];
-						}
-					}
-					break;
-			}
-			
-		}
-		*/
 	}
 
 	function _ReadAnimationBlock(actor, reader)
@@ -173,16 +132,16 @@ var ActorLoader = (function ()
 		}
 
 		// Read the number of keyed nodes.
-		var numKeyedNodes = reader.readUint16();
-		if(numKeyedNodes > 0)
+		var numKeyedComponents = reader.readUint16();
+		if(numKeyedComponents > 0)
 		{	
-			for(var i = 0; i < numKeyedNodes; i++)
+			for(var i = 0; i < numKeyedComponents; i++)
 			{
-				var nodeIndex = reader.readUint16();
-				var node = actor._Nodes[nodeIndex];
-				if(!node)
+				var componentIndex = reader.readUint16();
+				var component = actor._Components[componentIndex];
+				if(!component)
 				{
-					// Bad node was loaded, read past the animation data.
+					// Bad component was loaded, read past the animation data.
  					// Note this only works after version 12 as we can read by the entire set of properties.
  					var props = reader.readUint16();
  					for(var j = 0; j < props; j++)
@@ -192,8 +151,8 @@ var ActorLoader = (function ()
 				}
 				else
 				{
-					var animatedNode = new AnimatedNode(nodeIndex);
-					animation._Nodes.push(animatedNode);
+					var animatedComponent = new AnimatedComponent(componentIndex);
+					animation._Components.push(animatedComponent);
 
 					var props = reader.readUint16();
 					for(var j = 0; j < props; j++)
@@ -237,7 +196,7 @@ var ActorLoader = (function ()
 							continue;
 						}
 						var animatedProperty = new AnimatedProperty(propertyType);
-						animatedNode._Properties.push(animatedProperty);
+						animatedComponent._Properties.push(animatedProperty);
 
 						var keyFrameCount = propertyReader.readUint16();
 						var lastKeyFrame = null;
@@ -287,7 +246,7 @@ var ActorLoader = (function ()
 									var idx = propertyReader.readUint16();
 									var order = propertyReader.readUint16();
 									orderValue.push({
-										nodeIdx:idx,
+										componentIdx:idx,
 										value:order
 									});
 								}
@@ -295,8 +254,8 @@ var ActorLoader = (function ()
 							}
 							else if(propertyType === AnimatedProperty.Properties.VertexDeform)
 							{
-								keyFrame._Value = new Float32Array(node._NumVertices * 2);
-								node.hasVertexDeformAnimation = true;
+								keyFrame._Value = new Float32Array(component._NumVertices * 2);
+								component.hasVertexDeformAnimation = true;
 								propertyReader.readFloat32Array(keyFrame._Value);
 							}
 							else
@@ -384,7 +343,6 @@ var ActorLoader = (function ()
 	function _ReadAnimationsBlock(actor, reader)
 	{
 		var animationsCount = reader.readUint16();
-		var actorNodes = actor._Nodes;
 		var block = null;
 		while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 		{
@@ -521,8 +479,8 @@ var ActorLoader = (function ()
 		{
 			switch(block.type)
 			{
-				case _BlockTypes.Nodes:
-					_ReadNodesBlock(actor, block.reader);
+				case _BlockTypes.Components:
+					_ReadComponentsBlock(actor, block.reader);
 					break;
 				case _BlockTypes.View:
 					block.reader.readFloat32Array(actor._ViewCenter);
@@ -550,77 +508,84 @@ var ActorLoader = (function ()
 		}
 	}
 
-	function _ReadActorNode(reader, node)
+	function _ReadActorComponent(reader, component)
 	{
-		node._Name = reader.readString();
-		node._ParentIdx = reader.readUint16();
-		reader.readFloat32Array(node._Translation);
-		node._Rotation = reader.readFloat32();
-		reader.readFloat32Array(node._Scale);
-		node._Opacity = reader.readFloat32();
-
-		return node;
+		component._Name = reader.readString();
+		component._ParentIdx = reader.readUint16();
+		return component;
 	}
 
-	function _ReadActorBone(reader, node)
+	function _ReadActorNode(reader, component)
 	{
-		_ReadActorNode(reader, node);
-		node._Length = reader.readFloat32();
+		_ReadActorComponent(reader, component);
 
-		return node;
+		reader.readFloat32Array(component._Translation);
+		component._Rotation = reader.readFloat32();
+		reader.readFloat32Array(component._Scale);
+		component._Opacity = reader.readFloat32();
+
+		return component;
 	}
 
-	function _ReadActorRootBone(reader, node)
+	function _ReadActorBone(reader, component)
 	{
-		_ReadActorNode(reader, node);
+		_ReadActorNode(reader, component);
+		component._Length = reader.readFloat32();
 
-		return node;
+		return component;
 	}
 
-	function _ReadActorIKTarget(reader, node)
+	function _ReadActorRootBone(reader, component)
 	{
-		_ReadActorNode(reader, node);
+		_ReadActorNode(reader, component);
 
-		node._Order = reader.readUint16();
-		node._Strength = reader.readFloat32();
-		node._InvertDirection = reader.readUint8() === 1;
+		return component;
+	}
+
+	function _ReadActorIKTarget(reader, component)
+	{
+		_ReadActorNode(reader, component);
+
+		component._Order = reader.readUint16();
+		component._Strength = reader.readFloat32();
+		component._InvertDirection = reader.readUint8() === 1;
 
 		var numInfluencedBones = reader.readUint8();
 		if(numInfluencedBones > 0)
 		{
-			node._InfluencedBones = [];
+			component._InfluencedBones = [];
 
 			for(var i = 0; i < numInfluencedBones; i++)
 			{
-				node._InfluencedBones.push(reader.readUint16());
+				component._InfluencedBones.push(reader.readUint16());
 			}
 		}
 
-		return node;
+		return component;
 	}
 
-	function _ReadActorImage(reader, node)
+	function _ReadActorImage(reader, component)
 	{
-		_ReadActorNode(reader, node);
+		_ReadActorNode(reader, component);
 		var isVisible = reader.readUint8();
 		if(isVisible)
 		{
-			node._BlendMode = reader.readUint8();
-			node._DrawOrder = reader.readUint16();
-			node._AtlasIndex = reader.readUint8();
+			component._BlendMode = reader.readUint8();
+			component._DrawOrder = reader.readUint16();
+			component._AtlasIndex = reader.readUint8();
 
 			var numConnectedBones = reader.readUint8();
 			if(numConnectedBones > 0)
 			{
-				node._ConnectedBones = [];
+				component._ConnectedBones = [];
 				for(var i = 0; i < numConnectedBones; i++)
 				{
 					var bind = mat2d.create();
-					var nodeIndex = reader.readUint16();
+					var componentIndex = reader.readUint16();
 					reader.readFloat32Array(bind);
 
-					node._ConnectedBones.push({
-						nodeIndex:nodeIndex,
+					component._ConnectedBones.push({
+						componentIndex:componentIndex,
 						bind:bind,
 						ibind:mat2d.invert(mat2d.create(), bind)
 					});
@@ -629,24 +594,24 @@ var ActorLoader = (function ()
 				// Read the final override parent world.
 				var overrideWorld = mat2d.create();
 				reader.readFloat32Array(overrideWorld);
-				mat2d.copy(node._WorldTransform, overrideWorld);
-				node._OverrideWorldTransform = true;
+				mat2d.copy(component._WorldTransform, overrideWorld);
+				component._OverrideWorldTransform = true;
 			}
 
 			var numVertices = reader.readUint32();
 			var vertexStride = numConnectedBones > 0 ? 12 : 4;
 			
-			node._NumVertices = numVertices;
-			node._VertexStride = vertexStride;
-			node._Vertices = new Float32Array(numVertices * vertexStride);
-			reader.readFloat32Array(node._Vertices);
+			component._NumVertices = numVertices;
+			component._VertexStride = vertexStride;
+			component._Vertices = new Float32Array(numVertices * vertexStride);
+			reader.readFloat32Array(component._Vertices);
 
 			var numTris = reader.readUint32();
-			node._Triangles = new Uint16Array(numTris * 3);
-			reader.readUint16Array(node._Triangles);
+			component._Triangles = new Uint16Array(numTris * 3);
+			reader.readUint16Array(component._Triangles);
 		}
 
-		return node;
+		return component;
 	}
 
 	return ActorLoader;

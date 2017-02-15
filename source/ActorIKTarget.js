@@ -17,24 +17,25 @@ var ActorIKTarget = (function ()
 		this._Chain = null;
 	}
 
-	ActorNode.prototype.subclass(ActorIKTarget);
+	ActorNode.defineProperties(ActorIKTarget.prototype);
+	ActorNode.subclass(ActorIKTarget);
 
-	ActorIKTarget.prototype.resolveNodeIndices = function(nodes)
+	ActorIKTarget.prototype.resolveComponentIndices = function(components)
 	{
-		ActorNode.prototype.resolveNodeIndices.call(this, nodes);
+		ActorNode.prototype.resolveComponentIndices.call(this, components);
 
 		if(this._InfluencedBones)
 		{
 			for(var j = 0; j < this._InfluencedBones.length; j++)
 			{
-				var nodeIndex = this._InfluencedBones[j];
-				if(nodeIndex.constructor !== Number)
+				var componentIndex = this._InfluencedBones[j];
+				if(componentIndex.constructor !== Number)
 				{
-					nodeIndex = nodeIndex._Index;
+					componentIndex = componentIndex._Index;
 				}
 
 				{
-					this._InfluencedBones[j] = nodes[nodeIndex];
+					this._InfluencedBones[j] = components[componentIndex];
 					this._InfluencedBones[j]._Dependents.push(this);
 				}
 			}
@@ -217,6 +218,8 @@ var ActorIKTarget = (function ()
 		var wt = this.getWorldTransform();
 		worldTargetTranslation[0] = wt[4];
 		worldTargetTranslation[1] = wt[5];
+		//if(this._Name === "Foot Left Target")
+		//console.log(worldTargetTranslation, this._Name, this._Translation);
 		var strength = this._Strength;
 		var bones = this._InfluencedBones;
 		var chain = this._Chain;

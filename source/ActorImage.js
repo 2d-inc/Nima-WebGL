@@ -20,7 +20,7 @@ var ActorImage = (function ()
 		this._DeformVertexBuffer = null;
 	}
 
-	ActorImage.prototype = 
+	/*ActorImage.prototype = 
 	{ 
 		constructor:ActorImage,
 		get hasVertexDeformAnimation() 
@@ -43,8 +43,44 @@ var ActorImage = (function ()
 				readIdx += readStride;
 			}
 		}
+	};*/
+
+
+	ActorImage.defineProperties = function(prototype)
+	{
+		ActorNode.defineProperties(prototype);
+
+		Object.defineProperties(prototype,
+		{
+			hasVertexDeformAnimation:
+			{
+				get: function()
+				{
+					return this._HasVertexDeformAnimation;
+				},
+				set: function(value)
+				{
+					this._HasVertexDeformAnimation = value;
+					this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
+
+					// Copy the deform verts from the rig verts.
+					var writeIdx = 0;
+					var readIdx = 0;
+					var readStride = this._VertexStride;
+					for(var i = 0; i < this._NumVertices; i++)
+					{
+						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
+						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
+						readIdx += readStride;
+					}
+				}
+			}
+		});
 	};
-	ActorNode.prototype.subclass(ActorImage);
+
+	ActorImage.defineProperties(ActorImage.prototype);
+
+	ActorNode.subclass(ActorImage);
 	
 	ActorImage.BlendModes = 
 	{
@@ -185,16 +221,16 @@ var ActorImage = (function ()
 		}
 	};
 
-	ActorImage.prototype.resolveNodeIndices = function(nodes)
+	ActorImage.prototype.resolveComponentIndices = function(components)
 	{
-		ActorNode.prototype.resolveNodeIndices.call(this, nodes);
+		ActorNode.prototype.resolveComponentIndices.call(this, components);
 
 		if(this._ConnectedBones)
 		{
 			for(var j = 0; j < this._ConnectedBones.length; j++)
 			{
 				var cb = this._ConnectedBones[j];
-				cb.node = nodes[cb.nodeIndex];
+				cb.node = components[cb.componentIndex];
 				cb.node._IsConnectedToImage = true;
 			}
 		}
@@ -241,7 +277,7 @@ var ActorImage = (function ()
 				var cb = node._ConnectedBones[i];
 				// Copy all props except for the actual node reference which will update in our resolve.
 				this._ConnectedBones.push({
-						nodeIndex:cb.nodeIndex,
+						componentIndex:cb.componentIndex,
 						bind:cb.bind,
 						ibind:cb.ibind
 					});

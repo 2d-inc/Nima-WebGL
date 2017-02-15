@@ -2,7 +2,7 @@ var ActorNode = (function ()
 {
 	function ActorNode()
 	{
-		this._Name = "Node";
+		ActorComponent.call(this);
 		this._Children = [];
 		this._Dependents = [];
 		this._Transform = mat2d.create();
@@ -47,10 +47,12 @@ var ActorNode = (function ()
 
 	function _UpdateTransform(node)
 	{
+
 		node._IsDirty = false;
 
 		var r = node._OverrideRotation !== null ? node._OverrideRotation : node._Rotation;
 		var t = node._Translation;
+
 		//t[0] += 0.01;
 		var s = node._Scale;
 		var transform = node._Transform;
@@ -65,9 +67,126 @@ var ActorNode = (function ()
 		return transform;
 	}
 
+	ActorNode.defineProperties = function(prototype)
+	{
+		ActorComponent.defineProperties(prototype);
+
+		Object.defineProperties(prototype,
+		{
+			isNode:
+			{
+				get: function()
+				{
+					return true;
+				}
+			},
+			x:
+			{
+				get: function()
+				{
+					return this._Translation[0];
+				},
+				set: function(value)
+				{
+					if(this._Translation[0] != value)
+					{
+						this._Translation[0] = value;
+						this._IsDirty = true;
+						this.markWorldDirty();
+					}
+				}
+			},
+			y:
+			{
+				get: function()
+				{
+					return this._Translation[1];
+				},
+				set: function(value)
+				{
+					if(this._Translation[1] != value)
+					{
+						this._Translation[1] = value;
+						this._IsDirty = true;
+						this.markWorldDirty();
+					}
+				}
+			},
+			scaleX:
+			{
+				get: function()
+				{
+					return this._Scale[0];
+				},
+				set: function(value)
+				{
+					if(this._Scale[0] != value)
+					{
+						this._Scale[0] = value;
+						this._IsDirty = true;
+						this.markWorldDirty();
+					}
+				}
+			},
+			scaleY:
+			{
+				get: function()
+				{
+					return this._Scale[1];
+				},
+				set: function(value)
+				{
+					if(this._Scale[1] != value)
+					{
+						this._Scale[1] = value;
+						this._IsDirty = true;
+						this.markWorldDirty();
+					}
+				}
+			},
+			rotation:
+			{
+				get: function()
+				{
+					return this._Rotation;
+				},
+				set: function(value)
+				{
+					if(this._Rotation != value)
+					{
+						this._Rotation = value;
+						this._IsDirty = true;
+						this.markWorldDirty();
+					}
+				}
+			},
+			opacity:
+			{
+				get: function()
+				{
+					return this._Opacity;
+				},
+				set: function(value)
+				{
+					if(this._Opacity != value)
+					{
+						this._Opacity = value;
+						this.markWorldDirty();
+					}
+				}
+			}
+		});
+	};
+
+	ActorNode.defineProperties(ActorNode.prototype);
+/*
 	ActorNode.prototype = 
 	{ 
 		constructor:ActorNode,
+		get isNode()
+		{
+			return true;
+		},
 		get x() 
 		{ 
 			return this._Translation[0];
@@ -144,24 +263,10 @@ var ActorNode = (function ()
 				this._Opacity = value;
 				this.markWorldDirty();
 			}
-		},
-		get parent() 
-		{ 
-			return this._Parent;
-		},
-	};
-
-	ActorNode.prototype.resolveNodeIndices = function(nodes)
-	{
-		if(this._ParentIdx !== undefined)
-		{
-			this._Parent = nodes[this._ParentIdx];
-			if(this._Parent)
-			{
-				this._Parent._Children.push(this);
-			}
 		}
 	};
+*/
+	ActorComponent.subclass(ActorNode);
 
 	ActorNode.prototype.overrideRotation = function(r)
 	{
@@ -225,32 +330,21 @@ var ActorNode = (function ()
 		this._IsWorldDirty = true;
 	};
 
-	ActorNode.prototype.advance = function()
-	{
-	};
-
 	ActorNode.prototype.getWorldTranslation = function()
 	{
 		var transform = this.getWorldTransform();
 		return vec2.set(vec2.create(), transform[4], transform[5]);
 	};
 
-	ActorNode.prototype.subclass = function(other)
+	ActorNode.subclass = function(other)
 	{
-		other.prototype.initialize = ActorNode.prototype.initialize;
-		other.prototype.advance = ActorNode.prototype.advance;
+		ActorComponent.subclass(other);
 		other.prototype.getWorldTransform = ActorNode.prototype.getWorldTransform;
 		other.prototype.getTransform = ActorNode.prototype.getTransform;
 		other.prototype.updateTransforms = ActorNode.prototype.updateTransforms;
 		other.prototype.markWorldDirty = ActorNode.prototype.markWorldDirty;
 		other.prototype.getWorldTranslation = ActorNode.prototype.getWorldTranslation;
 		other.prototype.overrideRotation = ActorNode.prototype.overrideRotation;
-		other.prototype.resolveNodeIndices = ActorNode.prototype.resolveNodeIndices;
-	};
-
-	ActorNode.prototype.initialize = function(actor, graphics)
-	{
-
 	};
 
 	ActorNode.prototype.makeInstance = function(resetActor)
@@ -262,7 +356,7 @@ var ActorNode = (function ()
 
 	ActorNode.prototype.copy = function(node, resetActor)
 	{
-		this._Name = node._Name;
+		ActorComponent.prototype.copy.call(this, node, resetActor);
 		this._IsDirty = true;
 		this._IsWorldDirty = true;
 		mat2d.copy(this._Transform, node._Transform);
@@ -272,8 +366,6 @@ var ActorNode = (function ()
 		this._Rotation = node._Rotation;
 		this._Opacity = node._Opacity;
 		this._RenderOpacity = node._RenderOpacity;
-		this._ParentIdx = node._ParentIdx;
-		this._Idx = node._Idx;
 		this._OverrideWorldTransform = node._OverrideWorldTransform;
 		this._OverrideRotation = node._OverrideRotation;
 	};

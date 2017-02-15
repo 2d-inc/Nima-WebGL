@@ -5,7 +5,8 @@ var ActorRootBone = (function ()
 		ActorNode.call(this);
 	}
 
-	ActorNode.prototype.subclass(ActorRootBone);
+	ActorNode.defineProperties(ActorRootBone.prototype);
+	ActorNode.subclass(ActorRootBone);
 
 	ActorRootBone.prototype.makeInstance = function(resetActor)
 	{
