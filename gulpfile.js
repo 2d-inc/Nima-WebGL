@@ -5,8 +5,11 @@ var uglify = require('uglify-js');
 gulp.task('default', function(cb)
 {
 	var files = [
+		"source/Dispatcher.js",
 		"source/Graphics.js",
 		"source/Actor.js",
+		"source/ActorComponent.js",
+		"source/ActorEvent.js",
 		"source/ActorNode.js",
 		"source/ActorBone.js",
 		"source/ActorImage.js",
