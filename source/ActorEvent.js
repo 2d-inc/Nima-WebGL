@@ -2,7 +2,7 @@ var ActorEvent = (function ()
 {
 	function ActorEvent()
 	{
-		ActorNode.call(this);
+		ActorComponent.call(this);
 	}
 
 	ActorComponent.defineProperties(ActorEvent);
@@ -25,7 +25,7 @@ var ActorEvent = (function ()
 
 	ActorEvent.prototype.copy = function(node, resetActor)
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
+		ActorComponent.prototype.copy.call(this, node, resetActor);
 		this._Length = node._Length;
 		this._IsConnectedToImage = node._IsConnectedToImage;
 	};

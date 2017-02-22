@@ -13,7 +13,8 @@ var ActorLoader = (function ()
 		Atlases:9,
 		Atlas:10,
 		ActorIKTarget:11,
-		ActorEvent:12
+		ActorEvent:12,
+		CustomProperty:13
 	};
 
 	function ActorLoader()
@@ -93,6 +94,9 @@ var ActorLoader = (function ()
 			var component = null;
 			switch(block.type)
 			{
+				case _BlockTypes.CustomProperty:
+					component = _ReadCustomProperty(block.reader, new CustomProperty());
+					break;
 				case _BlockTypes.ActorEvent:
 					component = _ReadActorEvent(block.reader, new ActorEvent());
 					break;
@@ -185,7 +189,7 @@ var ActorLoader = (function ()
 							propertyReader = reader;
 							propertyType = reader.readUint8();	
 						}
-						
+
 						var validProperty = false;
 						switch(propertyType)
 						{
@@ -200,6 +204,9 @@ var ActorLoader = (function ()
 							case AnimatedProperty.Properties.VertexDeform:
 							case AnimatedProperty.Properties.IKStrength:
 							case AnimatedProperty.Properties.Trigger:
+							case AnimatedProperty.Properties.IntProperty:
+							case AnimatedProperty.Properties.FloatProperty:
+							case AnimatedProperty.Properties.StringProperty:
 								validProperty = true;
 								break;
 							default:
@@ -225,6 +232,7 @@ var ActorLoader = (function ()
 							{
 								switch(propertyType)
 								{
+									case AnimatedProperty.Properties.StringProperty:
 									case AnimatedProperty.Properties.Trigger:
 									case AnimatedProperty.Properties.DrawOrder:
 										// These do not interpolate.
@@ -259,6 +267,14 @@ var ActorLoader = (function ()
 							if(propertyType === AnimatedProperty.Properties.Trigger)
 							{
 								// No value on keyframe.
+							}
+							else if(propertyType === AnimatedProperty.Properties.IntProperty)
+							{
+								keyFrame._Value = propertyReader.readInt32();
+							}
+							else if(propertyType === AnimatedProperty.Properties.StringProperty)
+							{
+								keyFrame._Value = propertyReader.readString();
 							}
 							else if(propertyType === AnimatedProperty.Properties.DrawOrder)
 							{
@@ -535,6 +551,27 @@ var ActorLoader = (function ()
 	{
 		component._Name = reader.readString();
 		component._ParentIdx = reader.readUint16();
+		return component;
+	}
+
+	function _ReadCustomProperty(reader, component)
+	{
+		_ReadActorComponent(reader, component);
+
+		component._PropertyType = reader.readUint8();	
+		switch(component._PropertyType)
+		{
+			case CustomProperty.Type.Integer:
+				component._Value = reader.readInt32();
+				break;
+			case CustomProperty.Type.Float:
+				component._Value = reader.readFloat32();
+				break;
+			case CustomProperty.Type.String:
+				component._Value = reader.readString();
+				break;
+		}
+
 		return component;
 	}
 

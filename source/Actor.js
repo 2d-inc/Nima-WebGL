@@ -194,6 +194,20 @@ var Actor = (function ()
 		}
 	};
 
+	Actor.prototype.getNode = function(name)
+	{
+		var nodes = this._Nodes;
+		for(var i = 0; i < nodes.length; i++)
+		{
+			var node = nodes[i];
+			if(node._Name === name)
+			{
+				return node;
+			}
+		}
+		return null;
+	};
+
 	Actor.prototype.getAnimation = function(name)
 	{
 		var animations = this._Animations;

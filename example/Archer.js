@@ -34,6 +34,8 @@ var Archer = (function ()
 		this._FallMix = 0;
 		this._AirTime = 0;
 
+		this._GroundSpeedProperty = null;
+
 		this._Y = 0.0;
 		this._YVelocity = 0.0;
 		this._OnGround = true;
@@ -271,7 +273,8 @@ var Archer = (function ()
 
 			var moveSpeed = _This._Fast ? 1100.0 : 600.0;
 
-			actor._RootNode._Translation[0] += _This._HorizontalSpeed * /*(0.5 + 0.5*moveMix) */ elapsed * moveSpeed;	
+			var speedModifier = (_This._Fast ? 1.0 - _This._GroundSpeedProperty.value : _This._GroundSpeedProperty.value)*0.8+0.2;
+			actor._RootNode._Translation[0] += _This._HorizontalSpeed * (speedModifier) * /*(0.5 + 0.5*moveMix) */ elapsed * moveSpeed;	
 			actor._RootNode._IsDirty = true;
 			actor._RootNode.markWorldDirty();
 
@@ -635,17 +638,14 @@ var Archer = (function ()
 				if(aim)
 				{
 					// Find arrow node.
-					var arrowNode = null;
-					for(var i = 0; i < actor._Nodes.length; i++)
-					{
-						var node = actor._Nodes[i];
+					var arrowNode = actor.getNode("Muzzle");
 
-						if(node._Name === "Muzzle")
-						{
-							arrowNode = node;
-							break;
-						}
+					var character = actorInstance.getNode("Character");
+					if(character)
+					{
+						this._GroundSpeedProperty = character.getCustomProperty("GroundSpeed")
 					}
+
 					// Build look up table.
 					if(arrowNode)
 					{

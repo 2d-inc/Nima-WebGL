@@ -4,6 +4,7 @@ var ActorComponent = (function ()
 	{
 		this._Name = "Component";
 		this._Parent = null;
+		this._CustomProperties = [];
 	}
 
 	/*ActorComponent.prototype = 
@@ -36,6 +37,7 @@ var ActorComponent = (function ()
 		other.prototype.initialize = ActorComponent.prototype.initialize;
 		other.prototype.advance = ActorComponent.prototype.advance;
 		other.prototype.resolveComponentIndices = ActorComponent.prototype.resolveComponentIndices;
+		other.prototype.getCustomProperty = ActorComponent.prototype.getCustomProperty;
 	};
 
 
@@ -65,6 +67,20 @@ var ActorComponent = (function ()
 		this._Name = component._Name;
 		this._ParentIdx = component._ParentIdx;
 		this._Idx = component._Idx;
+	};
+
+	ActorComponent.prototype.getCustomProperty = function(name)
+	{
+		var props = this._CustomProperties;
+		for(var i = 0; i < props.length; i++)
+		{
+			var prop = props[i];
+			if(prop._Name === name)
+			{
+				return prop;
+			}
+		}
+		return null;
 	};
 	
 	return ActorComponent;

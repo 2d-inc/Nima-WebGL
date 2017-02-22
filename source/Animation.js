@@ -300,6 +300,29 @@ var Animation = (function ()
 							}
 						}
 						break;
+					case AnimatedProperty.Properties.StringProperty:
+						component._Value = value;
+						break;
+					case AnimatedProperty.Properties.IntProperty:
+						if(mix === 1.0)
+						{
+							component._Value = value;	
+						}
+						else
+						{
+							component._Value = Math.round(component._Value * imix + value * mix);
+						}
+						break;
+					case AnimatedProperty.Properties.FloatProperty:
+						if(mix === 1.0)
+						{
+							component._Value = value;	
+						}
+						else
+						{
+							component._Value = component._Value * imix + value * mix;
+						}
+						break;
 				}
 
 				if(markDirty)
@@ -346,7 +369,10 @@ var AnimatedProperty = (function ()
 		Length:8,
 		VertexDeform:9,
 		IKStrength:10,
-		Trigger:11
+		Trigger:11,
+		IntProperty:12,
+		FloatProperty:13,
+		StringProperty:14
 	};
 
 
