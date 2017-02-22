@@ -273,7 +273,7 @@ var Archer = (function ()
 
 			var moveSpeed = _This._Fast ? 1100.0 : 600.0;
 
-			var speedModifier = (_This._Fast ? 1.0 - _This._GroundSpeedProperty.value : _This._GroundSpeedProperty.value)*0.8+0.2;
+			var speedModifier = (_This._Fast ? 1.0 - _This._GroundSpeedProperty.value : _This._GroundSpeedProperty.value)*0.5+0.5;
 			actor._RootNode._Translation[0] += _This._HorizontalSpeed * (speedModifier) * /*(0.5 + 0.5*moveMix) */ elapsed * moveSpeed;	
 			actor._RootNode._IsDirty = true;
 			actor._RootNode.markWorldDirty();
