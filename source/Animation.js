@@ -277,7 +277,8 @@ var Animation = (function ()
 						component._VerticesDirty = true;
 						var nv = component._NumVertices;
 						var stride = component._VertexStride;
-						var to = component._Vertices;
+						var to = component._AnimationDeformedVertices;
+						//console.log("TO", component, to);
 						var from = value;
 						var tidx = 0;
 						var fidx = 0;
@@ -287,7 +288,8 @@ var Animation = (function ()
 							{
 								to[tidx] = value[fidx++];
 								to[tidx+1] = value[fidx++];
-								tidx += stride;
+								tidx+=2;
+								//tidx += stride;
 							}
 						}
 						else
@@ -296,7 +298,8 @@ var Animation = (function ()
 							{
 								to[tidx] = to[tidx] * imix + value[fidx++] * mix;
 								to[tidx+1] = to[tidx+1] * imix + value[fidx++] * mix;
-								tidx += stride;
+								tidx+=2;
+								//tidx += stride;
 							}
 						}
 						break;

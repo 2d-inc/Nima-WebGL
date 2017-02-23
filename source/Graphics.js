@@ -557,7 +557,7 @@ var Graphics = (function()
 
 			attributes:
 			{
-				VertexNormal:
+				VertexTexCoord:
 				{
 					name: "VertexTexCoord",
 					size: 2,
@@ -654,8 +654,8 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _TexturedShader.uniforms;
-			if(_Bind(_TexturedShader, deformBuffer.id, vertexBuffer.id))
+			var uniforms = _DeformedTexturedShader.uniforms;
+			if(_Bind(_DeformedTexturedShader, vertexBuffer.id, deformBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
@@ -717,8 +717,8 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _TexturedSkinShader.uniforms;
-			if(_Bind(_TexturedSkinShader, deformBuffer.id, vertexBuffer.id))
+			var uniforms = _DeformedTexturedSkinShader.uniforms;
+			if(_Bind(_DeformedTexturedSkinShader, vertexBuffer.id, deformBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
