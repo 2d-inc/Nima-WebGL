@@ -14,7 +14,9 @@ var ActorLoader = (function ()
 		Atlas:10,
 		ActorIKTarget:11,
 		ActorEvent:12,
-		CustomProperty:13
+		CustomIntProperty:13,
+		CustomFloatProperty:14,
+		CustomStringProperty:15
 	};
 
 	function ActorLoader()
@@ -94,8 +96,10 @@ var ActorLoader = (function ()
 			var component = null;
 			switch(block.type)
 			{
-				case _BlockTypes.CustomProperty:
-					component = _ReadCustomProperty(block.reader, new CustomProperty());
+				case _BlockTypes.CustomIntProperty:
+				case _BlockTypes.CustomStringProperty:
+				case _BlockTypes.CustomFloatProperty:
+					component = _ReadCustomProperty(block.reader, new CustomProperty(), block.type);
 					break;
 				case _BlockTypes.ActorEvent:
 					component = _ReadActorEvent(block.reader, new ActorEvent());
@@ -554,20 +558,22 @@ var ActorLoader = (function ()
 		return component;
 	}
 
-	function _ReadCustomProperty(reader, component)
+	function _ReadCustomProperty(reader, component, type)
 	{
 		_ReadActorComponent(reader, component);
 
-		component._PropertyType = reader.readUint8();	
-		switch(component._PropertyType)
+		switch(type)
 		{
-			case CustomProperty.Type.Integer:
+			case _BlockTypes.CustomIntProperty:
+				component._PropertyType = CustomProperty.Type.Integer;
 				component._Value = reader.readInt32();
 				break;
-			case CustomProperty.Type.Float:
+			case _BlockTypes.CustomFloatProperty:
+				component._PropertyType = CustomProperty.Type.Float;
 				component._Value = reader.readFloat32();
 				break;
-			case CustomProperty.Type.String:
+			case _BlockTypes.CustomStringProperty:
+				component._PropertyType = CustomProperty.Type.String;
 				component._Value = reader.readString();
 				break;
 		}
