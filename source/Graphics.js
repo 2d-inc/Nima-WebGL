@@ -7,7 +7,7 @@ var Graphics = (function()
 			preserveDrawingBuffer: true
 		};
 
-		var _GL = canvas.getContext("webgl", contextOptions) || canvas.getContext("experimental-webgl", contextOptions);
+		var _GL = canvas.getContext("webgl", contextOptions) || canvas.getContext("experimental-webgl", contextOptions) || canvas.getContext("webgl2", contextOptions);
 
 		var _AnisotropyExtension = _GL.getExtension("EXT_texture_filter_anisotropic");
 		var _MaxAnisotropy;
