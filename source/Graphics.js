@@ -764,6 +764,15 @@ export default class Graphics
 		this.drawTexturedSkin = _DrawTexturedSkin;
 		this.drawTexturedAndDeformedSkin = _DrawTexturedAndDeformedSkin;
 		this.setView = _SetView;
+		this.overrideProjection = function(projection)
+		{
+			_Projection = projection;
+		};
+		this.overrideView = function(view)
+		{
+			_ViewTransform = view;
+		};
+
 
 		this.__defineGetter__("viewportWidth", function()
 		{
