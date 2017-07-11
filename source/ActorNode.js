@@ -257,7 +257,8 @@ export default class ActorNode extends ActorComponent
 
 	overrideWorldTransform(transform)
 	{
-		this._OverrideWorldTransform = transform;
+		this._OverrideWorldTransform = transform ? true : false;
+		mat2d.copy(this._WorldTransform, transform);
 		this.markWorldDirty();
 	}
 }
