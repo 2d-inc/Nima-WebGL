@@ -254,4 +254,10 @@ export default class ActorNode extends ActorComponent
 		this._OverrideWorldTransform = node._OverrideWorldTransform;
 		this._OverrideRotation = node._OverrideRotation;
 	}
+
+	overrideWorldTransform(transform)
+	{
+		this._OverrideWorldTransform = transform;
+		this.markWorldDirty();
+	}
 }
