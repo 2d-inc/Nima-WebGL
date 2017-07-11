@@ -1,32 +1,32 @@
-var Dispatcher = (function()
+export default class Dispatcher
 {
-	function Dispatcher()
+	constructor()
 	{
-		this._Events = {};
+		this.events = {};
 	}
 
-	Dispatcher.prototype.addEventListener = function(event, callback)
+	addEventListener(event, callback)
 	{
-		var evt = this._Events[event];
+		let evt = this.events[event];
 		if(!evt)
 		{
-			this._Events[event] = evt = [];
+			this.events[event] = evt = [];
 		}
-		if(evt.indexOf(callback) != -1)
+		if(evt.indexOf(callback) !== -1)
 		{
 			return;
 		}
 		evt.push(callback);
-	};
+	}
 
-	Dispatcher.prototype.removeEventListener = function(event, callback)
+	removeEventListener(event, callback)
 	{
-		var evt = this._Events[event];
+		let evt = this.events[event];
 		if(!evt)
 		{
 			return true;
 		}
-		for(var i = 0; i < evt.length; i++)
+		for(let i = 0; i < evt.length; i++)
 		{
 			if(evt[i] === callback)
 			{
@@ -35,27 +35,17 @@ var Dispatcher = (function()
 			}
 		}
 		return false;
-	};
+	}
 
-	Dispatcher.prototype.dispatch = function(event, data, extraContext)
+	dispatch(event, data, extraContext)
 	{
-		var evt = this._Events[event];
+		let evt = this.events[event];
 		if(evt)
 		{
-			for(var i = 0; i < evt.length; i++)
+			for(let i = 0; i < evt.length; i++)
 			{
 				evt[i].call(this, data, extraContext);
 			}
 		}
 	}
-
-	Dispatcher.subclass = function(other)
-	{
-		other.prototype.addEventListener = Dispatcher.prototype.addEventListener;
-		other.prototype.removeEventListener = Dispatcher.prototype.removeEventListener;
-		other.prototype.dispatch = Dispatcher.prototype.dispatch;
-	};
-
-
-	return Dispatcher;
-}());
+}

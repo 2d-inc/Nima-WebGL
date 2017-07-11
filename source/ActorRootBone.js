@@ -1,24 +1,21 @@
-var ActorRootBone = (function ()
+import ActorNode from "./ActorNode.js";
+
+export default class ActorRootBone extends ActorNode
 {
-	function ActorRootBone()
+	constructor()
 	{
-		ActorNode.call(this);
+		super();
 	}
-
-	ActorNode.defineProperties(ActorRootBone.prototype);
-	ActorNode.subclass(ActorRootBone);
-
-	ActorRootBone.prototype.makeInstance = function(resetActor)
+	
+	makeInstance(resetActor)
 	{
 		var node = new ActorRootBone();
-		ActorRootBone.prototype.copy.call(node, this, resetActor);
+		node.copy(this, resetActor);
 		return node;	
-	};
+	}
 
-	ActorRootBone.prototype.copy = function(node, resetActor)
+	copy(node, resetActor)
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
-	};
-	
-	return ActorRootBone;
-}());
+		super.copy(node, resetActor);
+	}
+}

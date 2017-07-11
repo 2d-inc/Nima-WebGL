@@ -1,8 +1,11 @@
-var ActorImage = (function ()
+import ActorNode from "./ActorNode.js";
+import {mat2d} from "gl-matrix";
+
+export default class ActorImage extends ActorNode
 {
-	function ActorImage()
+	constructor()
 	{
-		ActorNode.call(this);
+		super();
 		this._DrawOrder = 0;
 		this._BlendMode = ActorImage.BlendModes.Normal;
 		this._AtlasIndex = -1;
@@ -20,77 +23,29 @@ var ActorImage = (function ()
 		this._DeformVertexBuffer = null;
 	}
 
-	/*ActorImage.prototype = 
-	{ 
-		constructor:ActorImage,
-		get hasVertexDeformAnimation() 
-		{ 
-			return this._HasVertexDeformAnimation; 
-		},
-		set hasVertexDeformAnimation(value)
-		{
-			this._HasVertexDeformAnimation = value;
-			this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
+	get hasVertexDeformAnimation()
+	{
+		return this._HasVertexDeformAnimation;
+	}
+		
+	set hasVertexDeformAnimation(value)
+	{
+		this._HasVertexDeformAnimation = value;
+		this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
 
-			// Copy the deform verts from the rig verts.
-			var writeIdx = 0;
-			var readIdx = 0;
-			var readStride = this._VertexStride;
-			for(var i = 0; i < this._NumVertices; i++)
-			{
-				this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
-				this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
-				readIdx += readStride;
-			}
+		// Copy the deform verts from the rig verts.
+		var writeIdx = 0;
+		var readIdx = 0;
+		var readStride = this._VertexStride;
+		for(var i = 0; i < this._NumVertices; i++)
+		{
+			this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
+			this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
+			readIdx += readStride;
 		}
-	};*/
+	}
 
-
-	ActorImage.defineProperties = function(prototype)
-	{
-		ActorNode.defineProperties(prototype);
-
-		Object.defineProperties(prototype,
-		{
-			hasVertexDeformAnimation:
-			{
-				get: function()
-				{
-					return this._HasVertexDeformAnimation;
-				},
-				set: function(value)
-				{
-					this._HasVertexDeformAnimation = value;
-					this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
-
-					// Copy the deform verts from the rig verts.
-					var writeIdx = 0;
-					var readIdx = 0;
-					var readStride = this._VertexStride;
-					for(var i = 0; i < this._NumVertices; i++)
-					{
-						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
-						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
-						readIdx += readStride;
-					}
-				}
-			}
-		});
-	};
-
-	ActorImage.defineProperties(ActorImage.prototype);
-
-	ActorNode.subclass(ActorImage);
-	
-	ActorImage.BlendModes = 
-	{
-		"Normal":0,
-		"Multiply":1,
-		"Screen":2,
-		"Additive":3
-	};
-
-	ActorImage.prototype.dispose = function(actor, graphics)
+	dispose(actor, graphics)
 	{
 		if(this._IsInstance)
 		{
@@ -114,9 +69,9 @@ var ActorImage = (function ()
 			}
 
 		}
-	};
+	}
 
-	ActorImage.prototype.initialize = function(actor, graphics)
+	initialize(actor, graphics)
 	{
 		if(!this._IsInstance)
 		{
@@ -144,9 +99,9 @@ var ActorImage = (function ()
 		delete this._Triangles;
 
 		this._Texture = actor._Atlases[this._AtlasIndex];
-	};
+	}
 
-	ActorImage.prototype.advance = function()
+	advance()
 	{
 		if(this._HasVertexDeformAnimation && this._VerticesDirty)
 		{
@@ -176,9 +131,9 @@ var ActorImage = (function ()
 				bt[bidx++] = wt[5];
 			}
 		}
-	};
+	}
 
-	ActorImage.prototype.draw = function(graphics)
+	draw(graphics)
 	{
 		var t = this._WorldTransform;
 		switch(this._BlendMode)
@@ -219,9 +174,9 @@ var ActorImage = (function ()
 				graphics.drawTextured(t, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
 			}
 		}
-	};
+	}
 
-	ActorImage.prototype.resolveComponentIndices = function(components)
+	resolveComponentIndices(components)
 	{
 		ActorNode.prototype.resolveComponentIndices.call(this, components);
 
@@ -234,19 +189,19 @@ var ActorImage = (function ()
 				cb.node._IsConnectedToImage = true;
 			}
 		}
-	};
+	}
 
-	ActorImage.prototype.makeInstance = function(resetActor)
+	makeInstance(resetActor)
 	{
 		var node = new ActorImage();
 		node._IsInstance = true;
 		ActorImage.prototype.copy.call(node, this, resetActor);
 		return node;	
-	};
+	}
 
-	ActorImage.prototype.copy = function(node, resetActor)
+	copy(node, resetActor)
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
+		super.copy(node, resetActor);
 
 		this._DrawOrder = node._DrawOrder;
 		this._BlendMode = node._BlendMode;
@@ -261,9 +216,9 @@ var ActorImage = (function ()
 		this._IndexBuffer = node._IndexBuffer;
 		if (node._HasVertexDeformAnimation)
 		{
-			var deformedVertexLength = this._NumVertices * 2;
+			let deformedVertexLength = this._NumVertices * 2;
 			this._AnimationDeformedVertices = new Float32Array(deformedVertexLength);
-			for(var i = 0; i < deformedVertexLength; i++)
+			for(let i = 0; i < deformedVertexLength; i++)
 			{
 				this._AnimationDeformedVertices[i] = node._AnimationDeformedVertices[i];
 			}
@@ -272,9 +227,8 @@ var ActorImage = (function ()
 		if(node._ConnectedBones)
 		{
 			this._ConnectedBones = [];
-			for(var i = 0; i < node._ConnectedBones.length; i++)
+			for(let cb of  node._ConnectedBones)
 			{
-				var cb = node._ConnectedBones[i];
 				// Copy all props except for the actual node reference which will update in our resolve.
 				this._ConnectedBones.push({
 						componentIndex:cb.componentIndex,
@@ -283,7 +237,14 @@ var ActorImage = (function ()
 					});
 			}
 		}
-	};
+	}
+}
 
-	return ActorImage;
-}());
+
+ActorImage.BlendModes = 
+{
+	"Normal":0,
+	"Multiply":1,
+	"Screen":2,
+	"Additive":3
+};

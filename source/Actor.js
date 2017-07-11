@@ -1,8 +1,14 @@
-var Actor = (function ()
+import Dispatcher from "./Dispatcher.js";
+import ActorNode from "./ActorNode.js";
+import ActorImage from "./ActorImage.js";
+import ActorIKTarget from "./ActorIKTarget.js";
+import AnimationInstance from "./AnimationInstance.js";
+
+export default class Actor extends Dispatcher
 {
-	function Actor()
+	constructor()
 	{
-		Dispatcher.call(this);
+		super();
 
 		this._Components = [];
 		this._Nodes = [];
@@ -17,23 +23,16 @@ var Actor = (function ()
 		this._IsImageSortDirty = false;
 	}
 
-	Actor.prototype = 
-	{ 
-		constructor:Actor,
-		get root()
-		{
-			return this._RootNode;
-		}
-	};
-	
-	Dispatcher.subclass(Actor);
-
-	Actor.prototype.resolveHierarchy = function(graphics)
+	get root()
 	{
-		var components = this._Components;
-		for(var i = 1; i < components.length; i++)
+		return this._RootNode;
+	}
+
+	resolveHierarchy(graphics)
+	{
+		let components = this._Components;
+		for(let component of components)
 		{
-			var component = components[i];
 			if(component != null)
 			{
 				component.resolveComponentIndices(components);
@@ -62,54 +61,51 @@ var Actor = (function ()
 		{
 			return a._Order - b._Order;
 		});
-	};
+	}
 
-	Actor.prototype.dispose = function(graphics)
+	dispose(graphics)
 	{
 		if(!this._IsInstance)
 		{
-			// Load all the atlases.
-			var atlases = this._Atlases;
-			for(var i = 0; i < atlases.length; i++)
+			let atlases = this._Atlases;
+			for(let atlas of atlases)
 			{
-				var atlas = atlases[i];
 				graphics.deleteTexture(atlas);
 			}
 		}
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let images = this._Images;
+		for(let image of images)
 		{
-			images[i].dispose(this, graphics);
+			image.dispose(this, graphics);
 		}
-	};
+	}
 
-	Actor.prototype.initialize = function(graphics)
+	initialize(graphics)
 	{
 		if(!this._IsInstance)
 		{
 			// Load all the atlases.
-			var atlases = this._Atlases;
-			for(var i = 0; i < atlases.length; i++)
+			let atlases = this._Atlases;
+			for(let i = 0; i < atlases.length; i++)
 			{
-				var atlas = atlases[i];
+				let atlas = atlases[i];
 				atlases[i] = graphics.loadTexture(atlas);
 			}
 		}
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let images = this._Images;
+		for(let image of images)
 		{
-			images[i].initialize(this, graphics);
+			image.initialize(this, graphics);
 		}
 	}
 
-	Actor.prototype.advance = function(seconds)
+	advance(seconds)
 	{
 		// First iterate solvers to see if any is dirty.
-		var solvers = this._Solvers;
-		var runSolvers = false;
-		for(var i = 0; i < solvers.length; i++)
+		let solvers = this._Solvers;
+		let runSolvers = false;
+		for(let solver of solvers)
 		{
-			var solver = solvers[i];
 			if(solver.needsSolve())
 			{
 				runSolvers = true;
@@ -117,10 +113,9 @@ var Actor = (function ()
 			}
 		}
 
-		var nodes = this._Nodes;
-		for(var i = 0; i < nodes.length; i++)
+		let nodes = this._Nodes;
+		for(let node of nodes)
 		{
-			var node = nodes[i];
 			if(node)
 			{
 				node.updateTransforms();
@@ -129,45 +124,39 @@ var Actor = (function ()
 
 		if(runSolvers)
 		{
-			for(var i = 0; i < solvers.length; i++)
+			for(let solver of solvers)
 			{
-				var solver = solvers[i];
 				solver.solveStart();
 			}	
 
-			for(var i = 0; i < solvers.length; i++)
+			for(let solver of solvers)
 			{
-				var solver = solvers[i];
 				solver.solve();
 			}
 
-			for(var i = 0; i < solvers.length; i++)
+			for(let solver of solvers)
 			{
-				var solver = solvers[i];
 				solver._SuppressMarkDirty = true;
 			}
 
-			for(var i = 0; i < nodes.length; i++)
+			for(let node of nodes)
 			{
-				var node = nodes[i];
 				if(node)
 				{
 					node.updateTransforms();
 				}
 			}
 
-			for(var i = 0; i < solvers.length; i++)
+			for(let solver of solvers)
 			{
-				var solver = solvers[i];
 				solver._SuppressMarkDirty = false;
 			}
 		}
 
-		var components = this._Components;
+		let components = this._Components;
 		// Advance last (update graphics buffers and such).
-		for(var i = 0; i < components.length; i++)
+		for(let component of components)
 		{
-			var component = components[i];
 			if(component)
 			{
 				component.advance(seconds);
@@ -182,79 +171,75 @@ var Actor = (function ()
 			});
 			this._IsImageSortDirty = false;
 		}
-	};
+	}
 
-	Actor.prototype.draw = function(graphics)
+	draw(graphics)
 	{
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let images = this._Images;
+		for(let image of images)
 		{
-			var img = images[i];
-			img.draw(graphics);
+			image.draw(graphics);
 		}
-	};
+	}
 
-	Actor.prototype.getNode = function(name)
+	getNode(name)
 	{
-		var nodes = this._Nodes;
-		for(var i = 0; i < nodes.length; i++)
+		let nodes = this._Nodes;
+		for(let node of nodes)
 		{
-			var node = nodes[i];
 			if(node._Name === name)
 			{
 				return node;
 			}
 		}
 		return null;
-	};
+	}
 
-	Actor.prototype.getAnimation = function(name)
+	getAnimation(name)
 	{
-		var animations = this._Animations;
-		for(var i = 0; i < animations.length; i++)
+		let animations = this._Animations;
+		for(let animation of animations)
 		{
-			var animation = animations[i];
 			if(animation._Name === name)
 			{
 				return animation;
 			}
 		}
 		return null;
-	};
+	}
 
-	Actor.prototype.getAnimationInstance = function(name)
+	getAnimationInstance(name)
 	{
-		var animation = this.getAnimation(name);
+		let animation = this.getAnimation(name);
 		if(!animation)
 		{
 			return null;
 		}
 		return new AnimationInstance(this, animation);
-	};
+	}
 
-	Actor.prototype.makeInstance = function()
+	makeInstance()
 	{
-		var actorInstance = new Actor();
+		let actorInstance = new Actor();
 		actorInstance._IsInstance = true;
 		actorInstance.copy(this);
 		return actorInstance;
-	};
+	}
 
-	Actor.prototype.copy = function(actor)
+	copy(actor)
 	{
-		var components = actor._Components;
+		let components = actor._Components;
 		this._Animations = actor._Animations;
 		this._Atlases = actor._Atlases;
 		this._Components.length = 0;
-		for(var i = 0; i < components.length; i++)
+		for(let component of components)
 		{
-			var component = components[i];
 			if(!component)
 			{
 				this._Components.push(null);
 				continue;
 			}
-			var instanceNode = component.makeInstance(this);
+			let instanceNode = component.makeInstance(this);
 			switch(instanceNode.constructor)
 			{
 				case ActorImage:
@@ -273,9 +258,9 @@ var Actor = (function ()
 		}
 		this._RootNode = this._Components[0];
 
-		for(var i = 1; i < this._Components.length; i++)
+		for(let i = 1; i < this._Components.length; i++)
 		{
-			var component = this._Components[i];
+			let component = this._Components[i];
 			if(component == null)
 			{
 				continue;
@@ -292,7 +277,5 @@ var Actor = (function ()
 		{
 			return a._Order - b._Order;
 		});
-	};	
-
-	return Actor;
-}());
+	}
+}

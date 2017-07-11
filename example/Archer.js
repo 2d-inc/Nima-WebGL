@@ -18,7 +18,7 @@ var Archer = (function ()
 
 	function Archer(canvas)
 	{
-		this._Graphics = new Graphics(canvas);
+		this._Graphics = new Nima.Graphics(canvas);
 		this._LastAdvanceTime = Date.now();
 		this._ViewTransform = mat2d.create();
 		this._AimAnimation = null;
@@ -560,7 +560,7 @@ var Archer = (function ()
 
 	Archer.prototype.load = function(url, callback)
 	{
-		var loader = new ActorLoader();
+		var loader = new Nima.ActorLoader();
 		var _This = this;
 		loader.load(url, function(actor)
 		{

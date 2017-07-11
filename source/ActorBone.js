@@ -1,37 +1,35 @@
-var ActorBone = (function ()
+import ActorNode from "./ActorNode.js";
+import {vec2, mat2d} from "gl-matrix";
+
+export default class ActorBone extends ActorNode
 {
-	function ActorBone()
+	constructor()
 	{
-		ActorNode.call(this);
+		super();
 
 		this._Length = 0;
 		this._IsConnectedToImage = false;
 	}
 
-	ActorNode.defineProperties(ActorBone.prototype);
-	ActorNode.subclass(ActorBone);
-	
-	ActorBone.prototype.getTipWorldTranslation = function()
+	getTipWorldTranslation()
 	{
 		var transform = mat2d.create();
 		transform[4] = this._Length;
 		mat2d.mul(transform, this.getWorldTransform(), transform);
 		return vec2.set(vec2.create(), transform[4], transform[5]);
-	};
+	}
 
-	ActorBone.prototype.makeInstance = function(resetActor)
+	makeInstance(resetActor)
 	{
 		var node = new ActorBone();
-		ActorBone.prototype.copy.call(node, this, resetActor);
+		node.copy(this, resetActor);
 		return node;	
-	};
+	}
 
-	ActorBone.prototype.copy = function(node, resetActor)
+	copy(node, resetActor)
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
+		super.copy(node, resetActor);
 		this._Length = node._Length;
 		this._IsConnectedToImage = node._IsConnectedToImage;
-	};
-
-	return ActorBone;
-}());
+	}
+}

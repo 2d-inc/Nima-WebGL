@@ -1,56 +1,27 @@
-var ActorComponent = (function ()
+export default class ActorComponent
 {
-	function ActorComponent()
+	constructor()
 	{
 		this._Name = "Component";
 		this._Parent = null;
 		this._CustomProperties = [];
 	}
 
-	/*ActorComponent.prototype = 
-	{ 
-		constructor:ActorComponent,
-		get parent() 
-		{ 
-			return this._Parent;
-		},
-	};*/
-
-	ActorComponent.defineProperties = function(prototype)
+	get parent()
 	{
-		Object.defineProperties(prototype,
-		{
-			parent:
-			{
-				get: function()
-				{
-					return this._Parent;
-				}
-			}
-		});
-	};
+		return this._Parent;
+	}
 
-	ActorComponent.defineProperties(ActorComponent.prototype);
-
-	ActorComponent.subclass = function(other)
-	{
-		other.prototype.initialize = ActorComponent.prototype.initialize;
-		other.prototype.advance = ActorComponent.prototype.advance;
-		other.prototype.resolveComponentIndices = ActorComponent.prototype.resolveComponentIndices;
-		other.prototype.getCustomProperty = ActorComponent.prototype.getCustomProperty;
-	};
-
-
-	ActorComponent.prototype.initialize = function(actor, graphics)
+	initialize(actor, graphics)
 	{
 
-	};
+	}
 
-	ActorComponent.prototype.advance = function(seconds)
+	advance(seconds)
 	{
-	};
+	}
 
-	ActorComponent.prototype.resolveComponentIndices = function(components)
+	resolveComponentIndices(components)
 	{
 		if(this._ParentIdx !== undefined)
 		{
@@ -60,28 +31,25 @@ var ActorComponent = (function ()
 				this._Parent._Children.push(this);
 			}
 		}
-	};
+	}
 
-	ActorComponent.prototype.copy = function(component, resetActor)
+	copy(component, resetActor)
 	{
 		this._Name = component._Name;
 		this._ParentIdx = component._ParentIdx;
 		this._Idx = component._Idx;
-	};
+	}
 
-	ActorComponent.prototype.getCustomProperty = function(name)
+	getCustomProperty(name)
 	{
-		var props = this._CustomProperties;
-		for(var i = 0; i < props.length; i++)
+		let props = this._CustomProperties;
+		for(let prop of props)
 		{
-			var prop = props[i];
 			if(prop._Name === name)
 			{
 				return prop;
 			}
 		}
 		return null;
-	};
-	
-	return ActorComponent;
-}());
+	}
+}

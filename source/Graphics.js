@@ -1,37 +1,44 @@
-var Graphics = (function()
+import {mat4} from "gl-matrix";
+
+export default class Graphics
 {
-	function Graphics(canvas)
+	constructor(glOrCanvas)
 	{
-		var contextOptions = {
+		let contextOptions = {
 			premultipliedAlpha: false,
 			preserveDrawingBuffer: true
 		};
 
-		var _GL = canvas.getContext("webgl", contextOptions) || canvas.getContext("experimental-webgl", contextOptions);
 
-		var _AnisotropyExtension = _GL.getExtension("EXT_texture_filter_anisotropic");
-		var _MaxAnisotropy;
+		let _GL = glOrCanvas instanceof WebGLRenderingContext ? glOrCanvas : glOrCanvas.getContext("webgl", contextOptions) || glOrCanvas.getContext("experimental-webgl", contextOptions);
+		let canvas = glOrCanvas instanceof WebGLRenderingContext ? null : glOrCanvas;
+
+		let _AnisotropyExtension = _GL.getExtension("EXT_texture_filter_anisotropic");
+		let _MaxAnisotropy;
 		if(_AnisotropyExtension)
 		{
 			_MaxAnisotropy = _GL.getParameter(_AnisotropyExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 		}
 
-		var _Projection = mat4.create();
-		var _Transform = mat4.create();
-		var _ViewTransform = mat4.create();
-		var _ColorBuffer = new Float32Array(4);
-		var _ViewportWidth = 0;
-		var _ViewportHeight = 0;
-		var _BlendMode = null;
+		let _Projection = mat4.create();
+		let _Transform = mat4.create();
+		let _ViewTransform = mat4.create();
+		let _ColorBuffer = new Float32Array(4);
+		let _ViewportWidth = 0;
+		let _ViewportHeight = 0;
+		let _BlendMode = null;
 
 		function _SetSize(width, height)
 		{
 			// Check if the canvas is not the same size.
-			if (canvas.width != width || canvas.height != height)
+			if (_ViewportWidth != width || _ViewportHeight != height)
 			{
 				// Make the canvas the same size
-				canvas.width = width;
-				canvas.height = height;
+				if(canvas)
+				{
+					canvas.width = width;
+					canvas.height = height;
+				}
 
 				_ViewportWidth = width;
 				_ViewportHeight = height;
@@ -56,7 +63,7 @@ var Graphics = (function()
 
 		function _LoadTexture(blob)
 		{
-			var tex = _GL.createTexture();
+			let tex = _GL.createTexture();
 			tex.ready = false;
 
 			_GL.bindTexture(_GL.TEXTURE_2D, tex);
@@ -86,10 +93,10 @@ var Graphics = (function()
 			}
 			else
 			{
-				var reader = new FileReader();
+				let reader = new FileReader();
 				reader.onload = function(e)
 				{
-					var img = new Image();
+					let img = new Image();
 					img.src = e.target.result;
 					img.onload = function()
 					{
@@ -117,8 +124,8 @@ var Graphics = (function()
 
 		function _Bind(shader, buffer, buffer2)
 		{
-			var boundBuffer = _GL.getParameter(_GL.ARRAY_BUFFER_BINDING);
-			var boundShader = _GL.getParameter(_GL.CURRENT_PROGRAM);
+			let boundBuffer = _GL.getParameter(_GL.ARRAY_BUFFER_BINDING);
+			let boundShader = _GL.getParameter(_GL.CURRENT_PROGRAM);
 
 			// May need to revisit this based on buffer2
 			if (boundShader === shader && boundBuffer === buffer)
@@ -129,8 +136,8 @@ var Graphics = (function()
 			// Disable anything necessary for the old shader.
 			if (boundShader)
 			{
-				var attribCount = _GL.getProgramParameter(boundShader, _GL.ACTIVE_ATTRIBUTES);
-				for (var i = 1; i < attribCount; i++)
+				let attribCount = _GL.getProgramParameter(boundShader, _GL.ACTIVE_ATTRIBUTES);
+				for (let i = 1; i < attribCount; i++)
 				{
 					_GL.disableVertexAttribArray(i);
 				}
@@ -150,10 +157,10 @@ var Graphics = (function()
 			{
 				_GL.bindBuffer(_GL.ARRAY_BUFFER, buffer2);
 
-				var atts = shader.attributes2;
-				for (var a in atts)
+				let atts = shader.attributes2;
+				for (let a in atts)
 				{
-					var at = atts[a];
+					let at = atts[a];
 
 					if (at.index != -1)
 					{
@@ -165,10 +172,10 @@ var Graphics = (function()
 
 			_GL.bindBuffer(_GL.ARRAY_BUFFER, buffer);
 
-			var atts = shader.attributes;
-			for (var a in atts)
+			let atts = shader.attributes;
+			for (let a in atts)
 			{
-				var at = atts[a];
+				let at = atts[a];
 
 				if (at.index != -1)
 				{
@@ -178,7 +185,7 @@ var Graphics = (function()
 			}
 
 			return true;
-		};
+		}
 
 		function _DisableBlending()
 		{
@@ -188,7 +195,7 @@ var Graphics = (function()
 			}
 			_BlendMode = 0;
 			_GL.disable(_GL.BLEND);
-		};
+		}
 
 		function _EnableBlending()
 		{
@@ -200,7 +207,7 @@ var Graphics = (function()
 			_GL.enable(_GL.BLEND);
 			//_GL.blendFuncSeparate(_GL.SRC_ALPHA, _GL.ONE_MINUS_SRC_ALPHA, _GL.ONE, _GL.ONE_MINUS_SRC_ALPHA);
 			_GL.blendFunc(_GL.ONE, _GL.ONE_MINUS_SRC_ALPHA);
-		};
+		}
 
 		function _EnableScreenBlending()
 		{
@@ -211,7 +218,7 @@ var Graphics = (function()
 			_BlendMode = 2;
 			_GL.enable(_GL.BLEND);
 			_GL.blendFuncSeparate(_GL.ONE, _GL.ONE_MINUS_SRC_COLOR, _GL.ONE, _GL.ONE_MINUS_SRC_ALPHA);
-		};
+		}
 
 		function _EnableMultiplyBlending()
 		{
@@ -222,7 +229,7 @@ var Graphics = (function()
 			_BlendMode = 3;
 			_GL.enable(_GL.BLEND);
 			_GL.blendFuncSeparate(_GL.DST_COLOR, _GL.ONE_MINUS_SRC_ALPHA, _GL.DST_ALPHA, _GL.ONE_MINUS_SRC_ALPHA);
-		};
+		}
 
 		function _EnablePremultipliedBlending()
 		{
@@ -233,7 +240,7 @@ var Graphics = (function()
 			_BlendMode = 4;
 			_GL.enable(_GL.BLEND);
 			_GL.blendFuncSeparate(_GL.ONE, _GL.ONE_MINUS_SRC_ALPHA, _GL.ONE, _GL.ONE_MINUS_SRC_ALPHA);
-		};
+		}
 
 		function _EnableAdditiveBlending()
 		{
@@ -244,11 +251,11 @@ var Graphics = (function()
 			_BlendMode = 5;
 			_GL.enable(_GL.BLEND);
 			_GL.blendFuncSeparate(_GL.ONE, _GL.ONE, _GL.ONE, _GL.ONE);
-		};
+		}
 
 		function VertexBuffer(id)
 		{
-			var _Size = 0;
+			let _Size = 0;
 			this.update = function(data)
 			{
 				_GL.bindBuffer(_GL.ARRAY_BUFFER, id);
@@ -275,8 +282,8 @@ var Graphics = (function()
 
 		function _MakeVertexBuffer(data)
 		{
-			var buffer = _GL.createBuffer();
-			var vtxBuffer = new VertexBuffer(buffer);
+			let buffer = _GL.createBuffer();
+			let vtxBuffer = new VertexBuffer(buffer);
 			if (data)
 			{
 				vtxBuffer.update(data);
@@ -287,7 +294,7 @@ var Graphics = (function()
 
 		function IndexBuffer(id)
 		{
-			var _Size = 0;
+			let _Size = 0;
 
 			this.update = function(data)
 			{
@@ -315,8 +322,8 @@ var Graphics = (function()
 
 		function _MakeIndexBuffer(data)
 		{
-			var buffer = _GL.createBuffer();
-			var indexBuffer = new IndexBuffer(buffer);
+			let buffer = _GL.createBuffer();
+			let indexBuffer = new IndexBuffer(buffer);
 			if (data)
 			{
 				indexBuffer.update(data);
@@ -349,7 +356,7 @@ var Graphics = (function()
 			{
 				_GL.useProgram(s.program);
 
-				for (var a in s.attributes)
+				for (let a in s.attributes)
 				{
 					if ((s.attributes[a].index = _GL.getAttribLocation(s.program, s.attributes[a].name)) == -1)
 					{
@@ -358,7 +365,7 @@ var Graphics = (function()
 				}
 				if (s.attributes2)
 				{
-					for (var a in s.attributes2)
+					for (let a in s.attributes2)
 					{
 						if ((s.attributes2[a].index = _GL.getAttribLocation(s.program, s.attributes2[a].name)) == -1)
 						{
@@ -366,9 +373,9 @@ var Graphics = (function()
 						}
 					}
 				}
-				for (var u in s.uniforms)
+				for (let u in s.uniforms)
 				{
-					var name = s.uniforms[u];
+					let name = s.uniforms[u];
 					if ((s.uniforms[u] = _GL.getUniformLocation(s.program, name)) == null)
 					{
 						console.log("Could not find uniform", name, "for shader", s.name);
@@ -377,19 +384,19 @@ var Graphics = (function()
 			}
 
 			return s;
-		};
+		}
 
 		function _GetShader(id)
 		{
-			var s = _CompiledShaders[id];
+			let s = _CompiledShaders[id];
 			if (s)
 			{
 				return s;
 			}
 
-			var shader = null;
+			let shader = null;
 
-			var shaderScript = _ShaderSources[id];
+			let shaderScript = _ShaderSources[id];
 			if (shaderScript)
 			{
 				if (id.indexOf(".fs") == id.length - 3)
@@ -412,16 +419,16 @@ var Graphics = (function()
 				_CompiledShaders[id] = shader;
 			}
 			return shader;
-		};
+		}
 
-		var _CompiledShaders = {};
-		var _ShaderSources = {
+		let _CompiledShaders = {};
+		let _ShaderSources = {
 			"Textured.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }",
 			"Textured.fs": "#ifdef GL_ES \nprecision highp float;\n #endif\n uniform vec4 Color; uniform float Opacity; uniform sampler2D TextureSampler; varying vec2 TexCoord; void main(void) {vec4 color = texture2D(TextureSampler, TexCoord) * Color * Opacity; gl_FragColor = color; }",
 			"TexturedSkin.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; attribute vec4 VertexBoneIndices; attribute vec4 VertexWeights; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; uniform vec3 BoneMatrices[82]; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec2 position = vec2(0.0, 0.0); vec4 p = WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); float x = p[0]; float y = p[1]; for(int i = 0; i < 4; i++) {float weight = VertexWeights[i]; int matrixIndex = int(VertexBoneIndices[i])*2; vec3 m = BoneMatrices[matrixIndex]; vec3 n = BoneMatrices[matrixIndex+1]; position[0] += (m[0] * x + m[2] * y + n[1]) * weight; position[1] += (m[1] * x + n[0] * y + n[2]) * weight; } vec4 pos = ViewMatrix * vec4(position.x, position.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }"
 		};
 
-		var _TexturedShader = _InitializeShader(
+		let _TexturedShader = _InitializeShader(
 		{
 			name: "TexturedShader",
 
@@ -457,7 +464,7 @@ var Graphics = (function()
 			}
 		});
 
-		var _DeformedTexturedShader = _InitializeShader(
+		let _DeformedTexturedShader = _InitializeShader(
 		{
 			name: "DeformedTexturedShader",
 
@@ -497,7 +504,7 @@ var Graphics = (function()
 			}
 		});
 
-		var _TexturedSkinShader = _InitializeShader(
+		let _TexturedSkinShader = _InitializeShader(
 		{
 			name: "TexturedSkinShader",
 
@@ -548,7 +555,7 @@ var Graphics = (function()
 			}
 		});
 
-		var _DeformedTexturedSkinShader = _InitializeShader(
+		let _DeformedTexturedSkinShader = _InitializeShader(
 		{
 			name: "DeformedTexturedSkinShader",
 
@@ -623,14 +630,14 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _TexturedShader.uniforms;
+			let uniforms = _TexturedShader.uniforms;
 			if(_Bind(_TexturedShader, vertexBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
 			}
 
-			for (var i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
+			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
 
 			_GL.uniform1f(uniforms.Opacity, opacity);
 			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
@@ -643,7 +650,7 @@ var Graphics = (function()
 
 			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		};
+		}
 
 		function _DrawTexturedAndDeformed(transform, deformBuffer, vertexBuffer, indexBuffer, opacity, color, tex)
 		{
@@ -654,14 +661,14 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _DeformedTexturedShader.uniforms;
+			let uniforms = _DeformedTexturedShader.uniforms;
 			if(_Bind(_DeformedTexturedShader, vertexBuffer.id, deformBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
 			}
 
-			for (var i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
+			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
 
 			_GL.uniform1f(uniforms.Opacity, opacity);
 			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
@@ -674,7 +681,7 @@ var Graphics = (function()
 
 			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		};
+		}
 
 		function _DrawTexturedSkin(transform, vertexBuffer, indexBuffer, boneMatrices, opacity, color, tex)
 		{
@@ -685,14 +692,14 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _TexturedSkinShader.uniforms;
+			let uniforms = _TexturedSkinShader.uniforms;
 			if(_Bind(_TexturedSkinShader, vertexBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
 			}
 
-			for (var i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
+			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
 
 			_GL.uniform1f(uniforms.Opacity, opacity);
 			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
@@ -706,7 +713,7 @@ var Graphics = (function()
 
 			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		};
+		}
 
 		function _DrawTexturedAndDeformedSkin(transform, deformBuffer, vertexBuffer, indexBuffer, boneMatrices, opacity, color, tex)
 		{
@@ -717,14 +724,14 @@ var Graphics = (function()
 			_Transform[12] = transform[4];
 			_Transform[13] = transform[5];
 
-			var uniforms = _DeformedTexturedSkinShader.uniforms;
+			let uniforms = _DeformedTexturedSkinShader.uniforms;
 			if(_Bind(_DeformedTexturedSkinShader, vertexBuffer.id, deformBuffer.id))
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
 			}
 
-			for (var i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
+			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
 
 			_GL.uniform1f(uniforms.Opacity, opacity);
 			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
@@ -738,7 +745,7 @@ var Graphics = (function()
 
 			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		};
+		}
 
 		this.loadTexture = _LoadTexture;
 		this.deleteTexture = _DeleteTexture;
@@ -768,6 +775,4 @@ var Graphics = (function()
 			return _ViewportHeight;
 		});
 	}
-
-	return Graphics;
-}());
+}
