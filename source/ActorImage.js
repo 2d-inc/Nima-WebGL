@@ -45,9 +45,9 @@ export default class ActorImage extends ActorNode
 		}
 	}
 
-	get aabb()
+	computeAABB()
 	{
-		let worldVertices = this.worldVertices;
+		let worldVertices = this.computeWorldVertices();
 		let nv = worldVertices.length/2;
 		let min_x = Number.MAX_VALUE;
 		let min_y = Number.MAX_VALUE;
@@ -80,7 +80,7 @@ export default class ActorImage extends ActorNode
 		return new Float32Array([min_x, min_y, max_x, max_y]);
 	}
 
-	get worldVertices()
+	computeWorldVertices()
 	{
 		let vertices = this._HasVertexDeformAnimation ? this._AnimationDeformedVertices : this._Vertices;
 

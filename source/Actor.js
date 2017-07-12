@@ -226,7 +226,7 @@ export default class Actor extends Dispatcher
 		return actorInstance;
 	}
 
-	get aabb()
+	computeAABB()
 	{
 		let min_x = Number.MAX_VALUE;
 		let min_y = Number.MAX_VALUE;
@@ -239,7 +239,7 @@ export default class Actor extends Dispatcher
 			{
 				continue;
 			}
-			let aabb = image.aabb;
+			let aabb = image.computeAABB();
 			if(aabb[0] < min_x)
 			{
 				min_x = aabb[0];
