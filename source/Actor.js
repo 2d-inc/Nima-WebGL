@@ -226,6 +226,41 @@ export default class Actor extends Dispatcher
 		return actorInstance;
 	}
 
+	get aabb()
+	{
+		let min_x = Number.MAX_VALUE;
+		let min_y = Number.MAX_VALUE;
+		let max_x = -Number.MAX_VALUE;
+		let max_y = -Number.MAX_VALUE;
+
+		for(let image of this._Images)
+		{
+			if(image.opacity < 0.01)
+			{
+				continue;
+			}
+			let aabb = image.aabb;
+			if(aabb[0] < min_x)
+			{
+				min_x = aabb[0];
+			}
+			if(aabb[1] < min_y)
+			{
+				min_y = aabb[1];
+			}
+			if(aabb[2] > max_x)
+			{
+				max_x = aabb[2];
+			}
+			if(aabb[3] > max_y)
+			{
+				max_y = aabb[3];
+			}
+		}
+
+		return new Float32Array([min_x, min_y, max_x, max_y]);
+	}
+
 	copy(actor)
 	{
 		let components = actor._Components;

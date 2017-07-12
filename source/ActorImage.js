@@ -1,5 +1,5 @@
 import ActorNode from "./ActorNode.js";
-import {mat2d} from "gl-matrix";
+import {vec2, mat2d} from "gl-matrix";
 
 export default class ActorImage extends ActorNode
 {
@@ -43,6 +43,111 @@ export default class ActorImage extends ActorNode
 			this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
 			readIdx += readStride;
 		}
+	}
+
+	get aabb()
+	{
+		let worldVertices = this.worldVertices;
+		let nv = worldVertices.length/2;
+		let min_x = Number.MAX_VALUE;
+		let min_y = Number.MAX_VALUE;
+		let max_x = -Number.MAX_VALUE;
+		let max_y = -Number.MAX_VALUE;
+
+		let readIdx = 0;
+		for(let i = 0; i < nv; i++)
+		{
+			let x = worldVertices[readIdx++];
+			let y = worldVertices[readIdx++];
+			if(x < min_x)
+			{
+				min_x = x;
+			}
+			if(y < min_y)
+			{
+				min_y = y;
+			}
+			if(x > max_x)
+			{
+				max_x = x;
+			}
+			if(y > max_y)
+			{
+				max_y = y;
+			}
+		}
+
+		return new Float32Array([min_x, min_y, max_x, max_y]);
+	}
+
+	get worldVertices()
+	{
+		let vertices = this._HasVertexDeformAnimation ? this._AnimationDeformedVertices : this._Vertices;
+
+		let stride = this._HasVertexDeformAnimation ? 2 : this._VertexStride;
+		let readIdx = 0;
+		let writeIdx = 0;
+
+		let world = this.getWorldTransform();
+
+		let nv = this._NumVertices;
+		let deformed = new Float32Array(nv*2);
+
+		if(this._ConnectedBones)
+		{
+			let weightIndex = 4;
+			let weightStride = 12;
+			let weightVertices = this._Vertices;
+
+			var bones = this._BoneMatrices;
+
+			for(let i = 0; i < nv; i++)
+			{
+				let x = vertices[readIdx];
+				let y = vertices[readIdx+1];
+				
+				readIdx += stride;
+
+				var px = world[0] * x + world[2] * y + world[4];
+				var py = world[1] * x + world[3] * y + world[5];
+
+				var fm = new Float32Array(6);
+				for(var wi = 0; wi < 4; wi++)
+				{
+					var boneIndex = weightVertices[weightIndex+wi];
+					var weight = weightVertices[weightIndex+wi+4];
+
+					var bb = boneIndex*6;
+
+					for(let j = 0; j < 6; j++)
+					{
+						fm[j] += bones[bb+j] * weight;
+					}
+				}
+
+				weightIndex += weightStride;
+
+				x = fm[0] * px + fm[2] * py + fm[4];
+				y = fm[1] * px + fm[3] * py + fm[5];
+
+				deformed[writeIdx++] = x;
+				deformed[writeIdx++] = y;
+			}
+		}
+		else
+		{
+			for(let i = 0; i < nv; i++)
+			{
+				let x = vertices[readIdx];
+				let y = vertices[readIdx+1];
+
+				deformed[writeIdx++] = world[0] * x + world[2] * y + world[4];
+				deformed[writeIdx++] = world[1] * x + world[3] * y + world[5];
+				readIdx += stride;
+			}
+		}
+
+		return deformed;
 	}
 
 	dispose(actor, graphics)
@@ -95,7 +200,8 @@ export default class ActorImage extends ActorNode
 			bt[4] = 0;
 			bt[5] = 0;
 		}
-		delete this._Vertices;
+		// Keep vertices for world calculations.
+		// delete this._Vertices;
 		delete this._Triangles;
 
 		this._Texture = actor._Atlases[this._AtlasIndex];
