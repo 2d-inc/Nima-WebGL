@@ -74,6 +74,7 @@ export default class Graphics
 			_GL.texParameteri(_GL.TEXTURE_2D, _GL.TEXTURE_WRAP_T, _GL.CLAMP_TO_EDGE);
 			_GL.bindTexture(_GL.TEXTURE_2D, null);
 			_GL.pixelStorei(_GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+			_GL.pixelStorei(_GL.UNPACK_FLIP_Y_WEBGL, false);
 			if(blob.constructor !== Blob)
 			{
 				_GL.bindTexture(_GL.TEXTURE_2D, tex);
