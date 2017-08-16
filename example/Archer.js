@@ -178,6 +178,8 @@ var Archer = (function ()
 				scaleX = -1.0;
 			}
 
+			actor._RootNode.opacity = 0.15;
+
 			if(actor._RootNode._Scale[0] != scaleX)
 			{
 				actor._RootNode._Scale[0] = scaleX;	
@@ -536,7 +538,34 @@ var Archer = (function ()
 
 		graphics.clear();
 		graphics.setView(viewer._ViewTransform);
+
+
+		let aabb = viewer._ActorInstance.computeAABB();
+
+		let width = (aabb[2] - aabb[0]) * 0.5;
+		let height = (aabb[3] - aabb[1]) * 0.5;
+
+		if(!viewer.vb)
+		{
+			let v = [0, 0, 0, 0,
+					100, 0, 0, 0,
+					100, 100, 0, 0,
+					0, 100, 0, 0];
+			let i = [0, 1, 2,
+					0, 2, 3];
+			viewer.vb = graphics.makeVertexBuffer(v);
+			viewer.ib = graphics.makeIndexBuffer(i);
+		}
+		let v = [aabb[0], aabb[1], 0, 0,
+					aabb[2], aabb[1], 0, 0,
+					aabb[2], aabb[3], 0, 0,
+					aabb[0], aabb[3], 0, 0];
+		viewer.vb.update(v);
+		//graphics.disableBlending();
+		//graphics.drawTextured(mat2d.create(), viewer.vb, viewer.ib, 1.0, [1.0, 1.0, 1.0, 1.0], viewer._ActorInstance._Atlases[0]);
+
 		viewer._ActorInstance.draw(graphics);
+
 	}
 
 	function _ScheduleAdvance(viewer)

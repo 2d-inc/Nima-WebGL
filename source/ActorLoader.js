@@ -29,7 +29,8 @@ var _BlockTypes = {
 	ActorEvent:12,
 	CustomIntProperty:13,
 	CustomFloatProperty:14,
-	CustomStringProperty:15
+	CustomStringProperty:15,
+	NestedActorNode:23
 };
 
 function _ReadNextBlock(reader, error)
@@ -97,6 +98,9 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.ActorIKTarget:
 				component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
+				break;
+			case _BlockTypes.NestedActorNode:
+				component = _ReadNestedActor(block.reader, new ActorIKTarget());
 				break;
 		}
 		if(component)
@@ -662,6 +666,11 @@ function _ReadActorImage(reader, component)
 		reader.readUint16Array(component._Triangles);
 	}
 
+	return component;
+}
+
+function _ReadNestedActor(reader, component)
+{
 	return component;
 }
 
