@@ -178,7 +178,7 @@ var Archer = (function ()
 				scaleX = -1.0;
 			}
 
-			actor._RootNode.opacity = 0.15;
+			//actor._RootNode.opacity = 0.15;
 
 			if(actor._RootNode._Scale[0] != scaleX)
 			{

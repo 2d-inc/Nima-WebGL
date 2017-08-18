@@ -1,28 +1,6 @@
 import ActorComponent from "./ActorComponent.js";
 import {vec2, mat2d} from "gl-matrix";
 
-function _UpdateWorldTransform(node)
-{
-	node._IsWorldDirty = false;
-
-	var transform = node._OverrideWorldTransform ? node._WorldTransform : mat2d.copy(node._WorldTransform, node.getTransform());
-	
-	node._RenderOpacity = node._Opacity;
-	
-	var parent = node._Parent;
-	if(parent)
-	{
-		parent.updateTransforms();
-		node._RenderOpacity *= parent._RenderOpacity;
-		if(!node._OverrideWorldTransform)
-		{
-			transform = mat2d.mul(transform, parent._WorldTransform, transform);
-		}
-	}
-
-	return transform;
-}
-
 function _UpdateTransform(node)
 {
 	node._IsDirty = false;
@@ -69,6 +47,27 @@ export default class ActorNode extends ActorComponent
 		this._SuppressMarkDirty = false;
 	}
 
+	updateWorldTransform()
+	{
+		this._IsWorldDirty = false;
+
+		var transform = this._OverrideWorldTransform ? this._WorldTransform : mat2d.copy(this._WorldTransform, this.getTransform());
+		
+		this._RenderOpacity = this._Opacity;
+		
+		var parent = this._Parent;
+		if(parent)
+		{
+			parent.updateTransforms();
+			this._RenderOpacity *= parent._RenderOpacity;
+			if(!this._OverrideWorldTransform)
+			{
+				transform = mat2d.mul(transform, parent._WorldTransform, transform);
+			}
+		}
+
+		return transform;
+	}
 	
 	get isNode()
 	{
@@ -178,7 +177,7 @@ export default class ActorNode extends ActorComponent
 	{
 		if(this._IsWorldDirty)
 		{
-			return _UpdateWorldTransform(this);
+			return this.updateWorldTransform();
 		}
 		return this._WorldTransform;
 	}
@@ -191,7 +190,7 @@ export default class ActorNode extends ActorComponent
 		}
 		if(this._IsWorldDirty)
 		{
-			_UpdateWorldTransform(this);
+			this.updateWorldTransform();
 		}
 	}
 

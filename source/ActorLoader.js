@@ -7,9 +7,11 @@ import ActorBone from "./ActorBone.js";
 import ActorRootBone from "./ActorRootBone.js";
 import ActorImage from "./ActorImage.js";
 import ActorIKTarget from "./ActorIKTarget.js";
+import NestedActorNode from "./NestedActorNode.js";
 import CustomProperty from "./CustomProperty.js";
 import AnimatedComponent from "./AnimatedComponent.js";
 import AnimatedProperty from "./AnimatedProperty.js";
+import NestedActorAsset from "./NestedActorAsset.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d} from "gl-matrix";
 
@@ -30,7 +32,9 @@ var _BlockTypes = {
 	CustomIntProperty:13,
 	CustomFloatProperty:14,
 	CustomStringProperty:15,
-	NestedActorNode:23
+	NestedActorNode:23,
+	NestedActorAssets:24,
+	NestedActorAsset:25
 };
 
 function _ReadNextBlock(reader, error)
@@ -100,7 +104,7 @@ function _ReadComponentsBlock(actor, reader)
 				component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
 				break;
 			case _BlockTypes.NestedActorNode:
-				component = _ReadNestedActor(block.reader, new ActorIKTarget());
+				component = _ReadNestedActor(block.reader, new NestedActorNode(), actor._NestedActorAssets);
 				break;
 		}
 		if(component)
@@ -333,7 +337,6 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							// Always hold draw order.
 							keyFrame._Type = KeyFrame.Type.Hold;
-							//console.log("DRAW ORDER TYPE SHOULD BE HOLD", keyFrame._Type);
 						}
 						else if(propertyType === AnimatedProperty.Properties.VertexDeform)
 						{
@@ -370,12 +373,34 @@ function _ReadAnimationsBlock(actor, reader)
 {
 	var animationsCount = reader.readUint16();
 	var block = null;
+	// The animations block only contains a list of animations, so we don't need to track how many we've read in.
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
 		switch(block.type)
 		{
 			case _BlockTypes.Animation:
 				_ReadAnimationBlock(actor, block.reader);
+				break;
+		}
+	}
+}
+
+function _ReadNestedActorAssetBlock(actor, reader)
+{
+	let asset = new NestedActorAsset(reader.readString(), reader.readString());
+	actor._NestedActorAssets.push(asset);
+}
+
+function _ReadNestedActorAssets(actor, reader)
+{
+	var nestedActorCount = reader.readUint16();
+	var block = null;
+	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
+	{
+		switch(block.type)
+		{
+			case _BlockTypes.NestedActorAsset:
+				_ReadNestedActorAssetBlock(actor, block.reader);
 				break;
 		}
 	}
@@ -486,7 +511,31 @@ function _ReadAtlasesBlock(actor, reader, callback)
 	return waitCount !== loadedCount;
 }
 
-function _ReadShot(data, callback)
+function _LoadNestedAssets(loader, actor, callback)
+{
+	let loadCount = actor._NestedActorAssets.length;
+	let nestedLoad = loader.loadNestedActor;
+	if(loadCount == 0 || !nestedLoad)
+	{
+		callback(actor);
+		return;
+	}
+
+	for(let asset of actor._NestedActorAssets)
+	{
+		nestedLoad(asset, function(nestedActor)
+		{
+			asset._Actor = nestedActor;
+			loadCount--;
+			if(loadCount <= 0)
+			{
+				callback(actor);
+			}
+		});
+	}
+}
+
+function _ReadShot(loader, data, callback)
 {
 	var reader = new BinaryReader(new Uint8Array(data));
 	// Check signature
@@ -520,17 +569,20 @@ function _ReadShot(data, callback)
 
 				if(_ReadAtlasesBlock(actor, block.reader, function()
 					{
-						callback(actor);
+						_LoadNestedAssets(loader, actor, callback);
 					}))
 				{
 					waitForAtlas = true;
 				}
 				break;
+			case _BlockTypes.NestedActorAssets:
+				_ReadNestedActorAssets(actor, block.reader);
+				break;
 		}
 	}
 	if(!waitForAtlas)
 	{
-		callback(actor);
+		_LoadNestedAssets(loader, actor, callback);
 	}
 }
 
@@ -669,8 +721,20 @@ function _ReadActorImage(reader, component)
 	return component;
 }
 
-function _ReadNestedActor(reader, component)
+function _ReadNestedActor(reader, component, nestedActorAssets)
 {
+	_ReadActorNode(reader, component);
+	var isVisible = reader.readUint8();
+	if(isVisible)
+	{
+		// Draw order
+		component._DrawOrder = reader.readUint16();
+		var assetIndex = reader.readUint16();
+		if(assetIndex < nestedActorAssets.length)
+		{
+			component._Asset = nestedActorAssets[assetIndex];
+		}
+	}
 	return component;
 }
 
@@ -678,6 +742,7 @@ export default class ActorLoader
 {
 	load(url, callback)
 	{
+		let loader = this;
 		if(url.constructor === String)
 		{
 			var req = new XMLHttpRequest();
@@ -688,7 +753,7 @@ export default class ActorLoader
 				var fileReader = new FileReader();
 				fileReader.onload = function() 
 				{
-					_ReadShot(this.result, callback);
+					_ReadShot(loader, this.result, callback);
 				};
 				fileReader.readAsArrayBuffer(this.response);
 			};
@@ -699,7 +764,7 @@ export default class ActorLoader
 			var fileReader = new FileReader();
 			fileReader.onload = function() 
 			{
-				_ReadShot(this.result, callback);
+				_ReadShot(loader, this.result, callback);
 			};
 			fileReader.readAsArrayBuffer(url);
 		}

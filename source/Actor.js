@@ -1,6 +1,7 @@
 import Dispatcher from "./Dispatcher.js";
 import ActorNode from "./ActorNode.js";
 import ActorImage from "./ActorImage.js";
+import NestedActorNode from "./NestedActorNode.js";
 import ActorIKTarget from "./ActorIKTarget.js";
 import AnimationInstance from "./AnimationInstance.js";
 
@@ -11,8 +12,9 @@ export default class Actor extends Dispatcher
 		super();
 
 		this._Components = [];
+		this._NestedActorAssets = [];
 		this._Nodes = [];
-		this._Images = [];
+		this._Drawables = [];
 		this._Atlases = [];
 		this._RootNode = new ActorNode();
 		this._Components.push(this._RootNode);
@@ -42,8 +44,9 @@ export default class Actor extends Dispatcher
 				}
 				switch(component.constructor)
 				{
+					case NestedActorNode:
 					case ActorImage:
-						this._Images.push(component);
+						this._Drawables.push(component);
 						break;
 					case ActorIKTarget:
 						this._Solvers.push(component);
@@ -52,7 +55,7 @@ export default class Actor extends Dispatcher
 			}
 		}
 
-		this._Images.sort(function(a,b)
+		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
 		});
@@ -73,10 +76,10 @@ export default class Actor extends Dispatcher
 				graphics.deleteTexture(atlas);
 			}
 		}
-		let images = this._Images;
-		for(let image of images)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			image.dispose(this, graphics);
+			drawable.dispose(this, graphics);
 		}
 	}
 
@@ -91,11 +94,19 @@ export default class Actor extends Dispatcher
 				let atlas = atlases[i];
 				atlases[i] = graphics.loadTexture(atlas);
 			}
+
+			for(let nested of this._NestedActorAssets)
+			{
+				if(nested.actor)
+				{
+					nested.actor.initialize(graphics);
+				}
+			}
 		}
-		let images = this._Images;
-		for(let image of images)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			image.initialize(this, graphics);
+			drawable.initialize(this, graphics);
 		}
 	}
 
@@ -165,7 +176,7 @@ export default class Actor extends Dispatcher
 
 		if(this._IsImageSortDirty)
 		{
-			this._Images.sort(function(a,b)
+			this._Drawables.sort(function(a,b)
 			{
 				return a._DrawOrder - b._DrawOrder;
 			});
@@ -175,10 +186,10 @@ export default class Actor extends Dispatcher
 
 	draw(graphics)
 	{
-		let images = this._Images;
-		for(let image of images)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			image.draw(graphics);
+			drawable.draw(graphics);
 		}
 	}
 
@@ -233,13 +244,17 @@ export default class Actor extends Dispatcher
 		let max_x = -Number.MAX_VALUE;
 		let max_y = -Number.MAX_VALUE;
 
-		for(let image of this._Images)
+		for(let drawable of this._Drawables)
 		{
-			if(image.opacity < 0.01)
+			if(drawable.opacity < 0.01)
 			{
 				continue;
 			}
-			let aabb = image.computeAABB();
+			let aabb = drawable.computeAABB();
+			if(!aabb)
+			{
+				continue;
+			}
 			if(aabb[0] < min_x)
 			{
 				min_x = aabb[0];
@@ -267,6 +282,8 @@ export default class Actor extends Dispatcher
 		this._Animations = actor._Animations;
 		this._Atlases = actor._Atlases;
 		this._Components.length = 0;
+		this._Drawables.length = 0;
+
 		for(let component of components)
 		{
 			if(!component)
@@ -277,8 +294,9 @@ export default class Actor extends Dispatcher
 			let instanceNode = component.makeInstance(this);
 			switch(instanceNode.constructor)
 			{
+				case NestedActorNode:
 				case ActorImage:
-					this._Images.push(instanceNode);
+					this._Drawables.push(instanceNode);
 					break;
 
 				case ActorIKTarget:
@@ -303,7 +321,7 @@ export default class Actor extends Dispatcher
 			component.resolveComponentIndices(this._Components);
 		}
 
-		this._Images.sort(function(a,b)
+		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
 		});
