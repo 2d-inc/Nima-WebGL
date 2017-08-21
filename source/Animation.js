@@ -333,6 +333,9 @@ export default class Animation
 							component._Value = component._Value * imix + value * mix;
 						}
 						break;
+					case AnimatedProperty.Properties.BooleanProperty:
+						component._Value = value;
+						break;
 				}
 
 				if(markDirty)

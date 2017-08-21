@@ -32,9 +32,17 @@ var _BlockTypes = {
 	CustomIntProperty:13,
 	CustomFloatProperty:14,
 	CustomStringProperty:15,
-	NestedActorNode:23,
-	NestedActorAssets:24,
-	NestedActorAsset:25
+	CustomBooleanProperty:16,
+	ColliderRectangle:17, // TODO
+	ColliderTriangle:18, // TODO
+	ColliderCircle:19, // TODO
+	ColliderPolygon:20, // TODO
+	ColliderLine:21, // TODO
+	ActorImageSequence:22, // TODO
+	ActorStaticMesh:23, // TODO
+	NestedActorNode:24,
+	NestedActorAssets:25,
+	NestedActorAsset:26
 };
 
 function _ReadNextBlock(reader, error)
@@ -83,6 +91,7 @@ function _ReadComponentsBlock(actor, reader)
 			case _BlockTypes.CustomIntProperty:
 			case _BlockTypes.CustomStringProperty:
 			case _BlockTypes.CustomFloatProperty:
+			case _BlockTypes.CustomBooleanProperty:
 				component = _ReadCustomProperty(block.reader, new CustomProperty(), block.type);
 				break;
 			case _BlockTypes.ActorEvent:
@@ -198,6 +207,7 @@ function _ReadAnimationBlock(actor, reader)
 						case AnimatedProperty.Properties.IntProperty:
 						case AnimatedProperty.Properties.FloatProperty:
 						case AnimatedProperty.Properties.StringProperty:
+						case AnimatedProperty.Properties.BooleanProperty:
 							validProperty = true;
 							break;
 						default:
@@ -223,6 +233,7 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							switch(propertyType)
 							{
+								case AnimatedProperty.Properties.BooleanProperty:
 								case AnimatedProperty.Properties.StringProperty:
 								case AnimatedProperty.Properties.Trigger:
 								case AnimatedProperty.Properties.DrawOrder:
@@ -266,6 +277,10 @@ function _ReadAnimationBlock(actor, reader)
 						else if(propertyType === AnimatedProperty.Properties.StringProperty)
 						{
 							keyFrame._Value = propertyReader.readString();
+						}
+						else if(propertyType === AnimatedProperty.Properties.BooleanProperty)
+						{
+							keyFrame._Value = propertyReader.readUint8() === 1;
 						}
 						else if(propertyType === AnimatedProperty.Properties.DrawOrder)
 						{
@@ -610,6 +625,10 @@ function _ReadCustomProperty(reader, component, type)
 		case _BlockTypes.CustomStringProperty:
 			component._PropertyType = CustomProperty.Type.String;
 			component._Value = reader.readString();
+			break;
+		case _BlockTypes.CustomBooleanProperty:
+			component._PropertyType = CustomProperty.Type.Boolean;
+			component._Value = reader.readUint8() === 1;
 			break;
 	}
 

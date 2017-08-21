@@ -51,5 +51,6 @@ CustomProperty.Type =
 {
 	Integer:0,
 	Float:1,
-	String:2
+	String:2,
+	Boolean:3
 };

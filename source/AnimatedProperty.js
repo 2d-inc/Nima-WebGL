@@ -23,5 +23,6 @@ AnimatedProperty.Properties =
 	Trigger:11,
 	IntProperty:12,
 	FloatProperty:13,
-	StringProperty:14
+	StringProperty:14,
+	BooleanProperty:15
 };
