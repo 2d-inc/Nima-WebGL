@@ -228,6 +228,7 @@ function _ReadAnimationBlock(actor, reader)
 						case AnimatedProperty.Properties.FloatProperty:
 						case AnimatedProperty.Properties.StringProperty:
 						case AnimatedProperty.Properties.BooleanProperty:
+						case AnimatedProperty.Properties.IsCollisionEnabled:
 							validProperty = true;
 							break;
 						default:
@@ -253,6 +254,7 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							switch(propertyType)
 							{
+								case AnimatedProperty.Properties.IsCollisionEnabled:
 								case AnimatedProperty.Properties.BooleanProperty:
 								case AnimatedProperty.Properties.StringProperty:
 								case AnimatedProperty.Properties.Trigger:
@@ -298,7 +300,7 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							keyFrame._Value = propertyReader.readString();
 						}
-						else if(propertyType === AnimatedProperty.Properties.BooleanProperty)
+						else if(propertyType === AnimatedProperty.Properties.BooleanProperty || propertyType === AnimatedProperty.Properties.IsCollisionEnabled)
 						{
 							keyFrame._Value = propertyReader.readUint8() === 1;
 						}

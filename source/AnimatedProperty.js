@@ -24,5 +24,6 @@ AnimatedProperty.Properties =
 	IntProperty:12,
 	FloatProperty:13,
 	StringProperty:14,
-	BooleanProperty:15
+	BooleanProperty:15,
+	IsCollisionEnabled:16
 };

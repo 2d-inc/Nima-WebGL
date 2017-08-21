@@ -336,6 +336,9 @@ export default class Animation
 					case AnimatedProperty.Properties.BooleanProperty:
 						component._Value = value;
 						break;
+					case AnimatedProperty.Properties.IsCollisionEnabled:
+						component._IsCollisionEnabled = value;
+						break;
 				}
 
 				if(markDirty)
