@@ -7,6 +7,11 @@ import ActorBone from "./ActorBone.js";
 import ActorRootBone from "./ActorRootBone.js";
 import ActorImage from "./ActorImage.js";
 import ActorIKTarget from "./ActorIKTarget.js";
+import ActorColliderRectangle from "./ActorColliderRectangle.js";
+import ActorColliderTriangle from "./ActorColliderTriangle.js";
+import ActorColliderCircle from "./ActorColliderCircle.js";
+import ActorColliderPolygon from "./ActorColliderPolygon.js";
+import ActorColliderLine from "./ActorColliderLine.js";
 import NestedActorNode from "./NestedActorNode.js";
 import CustomProperty from "./CustomProperty.js";
 import AnimatedComponent from "./AnimatedComponent.js";
@@ -33,11 +38,11 @@ var _BlockTypes = {
 	CustomFloatProperty:14,
 	CustomStringProperty:15,
 	CustomBooleanProperty:16,
-	ColliderRectangle:17, // TODO
-	ColliderTriangle:18, // TODO
-	ColliderCircle:19, // TODO
-	ColliderPolygon:20, // TODO
-	ColliderLine:21, // TODO
+	ColliderRectangle:17, 
+	ColliderTriangle:18, 
+	ColliderCircle:19, 
+	ColliderPolygon:20, 
+	ColliderLine:21, 
 	ActorImageSequence:22, // TODO
 	ActorStaticMesh:23, // TODO
 	NestedActorNode:24,
@@ -93,6 +98,21 @@ function _ReadComponentsBlock(actor, reader)
 			case _BlockTypes.CustomFloatProperty:
 			case _BlockTypes.CustomBooleanProperty:
 				component = _ReadCustomProperty(block.reader, new CustomProperty(), block.type);
+				break;
+			case _BlockTypes.ColliderRectangle:
+				component = _ReadRectangleCollider(block.reader, new ActorColliderRectangle());
+				break;
+			case _BlockTypes.ColliderTriangle:
+				component = _ReadTriangleCollider(block.reader, new ActorColliderTriangle());
+				break;
+			case _BlockTypes.ColliderCircle:
+				component = _ReadCircleCollider(block.reader, new ActorColliderCircle());
+				break;
+			case _BlockTypes.ColliderPolygon:
+				component = _ReadPolygonCollider(block.reader, new ActorColliderPolygon());
+				break;
+			case _BlockTypes.ColliderLine:
+				component = _ReadLineCollider(block.reader, new ActorColliderLine());
 				break;
 			case _BlockTypes.ActorEvent:
 				component = _ReadActorEvent(block.reader, new ActorEvent());
@@ -631,6 +651,64 @@ function _ReadCustomProperty(reader, component, type)
 			component._Value = reader.readUint8() === 1;
 			break;
 	}
+
+	return component;
+}
+
+function _ReadCollider(reader, component)
+{
+	_ReadActorNode(reader, component);
+	component._IsCollisionEnabled = reader.readUint8() === 1;
+	return component;
+}
+
+function _ReadRectangleCollider(reader, component)
+{
+	_ReadCollider(reader, component);
+
+	component._Width = reader.readFloat32();
+	component._Height = reader.readFloat32();
+
+	return component;
+}
+
+function _ReadTriangleCollider(reader, component)
+{
+	_ReadCollider(reader, component);
+
+	component._Width = reader.readFloat32();
+	component._Height = reader.readFloat32();
+
+	return component;
+}
+
+function _ReadCircleCollider(reader, component)
+{
+	_ReadCollider(reader, component);
+
+	component._Radius = reader.readFloat32();
+
+	return component;
+}
+
+function _ReadPolygonCollider(reader, component)
+{
+	_ReadCollider(reader, component);
+
+	var numVertices = reader.readUint32();
+	component._ContourVertices = new Float32Array(numVertices * 2);
+	reader.readFloat32Array(component._ContourVertices);
+
+	return component;
+}
+
+function _ReadLineCollider(reader, component)
+{
+	_ReadCollider(reader, component);
+
+	var numVertices = reader.readUint32();
+	component._Vertices = new Float32Array(numVertices * 2);
+	reader.readFloat32Array(component._Vertices);
 
 	return component;
 }

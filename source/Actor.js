@@ -282,6 +282,7 @@ export default class Actor extends Dispatcher
 		this._Animations = actor._Animations;
 		this._Atlases = actor._Atlases;
 		this._Components.length = 0;
+		this._Nodes.length = 0;
 		this._Drawables.length = 0;
 
 		for(let component of components)
