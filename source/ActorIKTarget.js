@@ -229,6 +229,10 @@ export default class ActorIKTarget extends ActorNode
 		let tip = this._Bone2;
 		let invert = this._InvertDirection;
 
+		if(!chain)
+		{
+			return;
+		}
 		for(let i = 0; i < chain.length; i++)
 		{
 			let fk = chain[i];
