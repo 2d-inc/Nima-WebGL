@@ -282,16 +282,19 @@ export default class ActorIKTarget extends ActorNode
 		this._Strength = node._Strength;
 		this._InvertDirection = node._InvertDirection;
 		this._InfluencedBones = [];
-		for (var i = 0; i < node._InfluencedBones.length; i++)
+		if(node._InfluencedBones)
 		{
-			var ib = node._InfluencedBones[i];
-			if(ib.constructor === ActorBone)
+			for (var i = 0; i < node._InfluencedBones.length; i++)
 			{
-				this._InfluencedBones.push(ib._Index);
-			}
-			else
-			{
-				this._InfluencedBones.push(ib);
+				var ib = node._InfluencedBones[i];
+				if(ib.constructor === ActorBone)
+				{
+					this._InfluencedBones.push(ib._Index);
+				}
+				else
+				{
+					this._InfluencedBones.push(ib);
+				}
 			}
 		}
 	}
