@@ -110,28 +110,26 @@ export default class ActorIKTarget extends ActorNode
 	{
 		super.resolveComponentIndices(components);
 
-		if(this._InfluencedBones)
-		{
-			for(let j = 0; j < this._InfluencedBones.length; j++)
-			{
-				let componentIndex = this._InfluencedBones[j];
-				if(componentIndex.constructor !== Number)
-				{
-					componentIndex = componentIndex._Index;
-				}
-
-				{
-					this._InfluencedBones[j] = components[componentIndex];
-					this._InfluencedBones[j]._Dependents.push(this);
-				}
-			}
-		}
-
 		let bones = this._InfluencedBones;
-		if(!bones.length)
+		if(!bones || !bones.length)
 		{
 			return;
 		}
+
+		for(let j = 0; j < bones.length; j++)
+		{
+			let componentIndex = bones[j];
+			if(componentIndex.constructor !== Number)
+			{
+				componentIndex = componentIndex._Index;
+			}
+
+			{
+				bones[j] = components[componentIndex];
+				bones[j]._Dependents.push(this);
+			}
+		}
+
 		this._Bone1 = bones[0];
 		this._Bone2 = bones[bones.length-1];
 		let b1c = this._Bone2;
