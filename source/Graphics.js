@@ -389,7 +389,7 @@ export default class Graphics
 
 		function _GetShader(id)
 		{
-			let s = _CompiledShaders[id];
+			let s = _CompiledShaders.get(id);
 			if (s)
 			{
 				return s;
@@ -417,12 +417,12 @@ export default class Graphics
 					console.log("Failed to compile", id);
 					return null;
 				}
-				_CompiledShaders[id] = shader;
+				_CompiledShaders.set(id, shader);
 			}
 			return shader;
 		}
 
-		let _CompiledShaders = {};
+		let _CompiledShaders = new Map();
 		let _ShaderSources = {
 			"Textured.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }",
 			"Textured.fs": "#ifdef GL_ES \nprecision highp float;\n #endif\n uniform vec4 Color; uniform float Opacity; uniform sampler2D TextureSampler; varying vec2 TexCoord; void main(void) {vec4 color = texture2D(TextureSampler, TexCoord) * Color * Opacity; gl_FragColor = color; }",
@@ -748,6 +748,19 @@ export default class Graphics
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
 		}
 
+		function _Dispose()
+		{
+			_GL.deleteProgram(_DeformedTexturedSkinShader.program);
+			_GL.deleteProgram(_TexturedSkinShader.program);
+			_GL.deleteProgram(_DeformedTexturedShader.program);
+			_GL.deleteProgram(_TexturedShader.program);
+
+			for(let [key, shader] of _CompiledShaders)
+			{
+				_GL.deleteShader(shader);
+			}
+		}
+
 		this.loadTexture = _LoadTexture;
 		this.deleteTexture = _DeleteTexture;
 		this.setSize = _SetSize;
@@ -765,6 +778,8 @@ export default class Graphics
 		this.drawTexturedSkin = _DrawTexturedSkin;
 		this.drawTexturedAndDeformedSkin = _DrawTexturedAndDeformedSkin;
 		this.setView = _SetView;
+		this.dispose = _Dispose;
+
 		this.overrideProjection = function(projection)
 		{
 			_Projection = projection;
@@ -773,7 +788,6 @@ export default class Graphics
 		{
 			_ViewTransform = view;
 		};
-
 
 		this.__defineGetter__("viewportWidth", function()
 		{

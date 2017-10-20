@@ -180,11 +180,24 @@ export default class ActorImage extends ActorNode
 	{
 		if(!this._IsInstance)
 		{
+			if(this._VertexBuffer)
+			{
+				this._VertexBuffer.dispose();
+			}
+			if(this._VertexBuffer)
+			{
+				this._VertexBuffer.dispose();
+			}
+
 			this._VertexBuffer = graphics.makeVertexBuffer(this._Vertices);
 			this._IndexBuffer = graphics.makeIndexBuffer(this._Triangles);
 		}
 		else if(this._HasVertexDeformAnimation)
 		{
+			if(this._DeformVertexBuffer)
+			{
+				this._DeformVertexBuffer.dispose();
+			}
 			this._DeformVertexBuffer = graphics.makeVertexBuffer(this._AnimationDeformedVertices);
 		}
 
