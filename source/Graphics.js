@@ -49,10 +49,18 @@ export default class Graphics
 			return false;
 		}
 
-		function _Clear()
+		function _Clear(color)
 		{
 			//_GL.clearColor(0.0, 0.0, 0.0, 0.0);
-			_GL.clearColor(0.3628, 0.3628, 0.3628, 1.0);
+			if(color)
+			{
+				_GL.clearColor(color[0], color[1], color[2], color[3]);	
+			}
+			else
+			{
+				_GL.clearColor(0.3628, 0.3628, 0.3628, 1.0);
+			}
+			
 			_GL.clear(_GL.COLOR_BUFFER_BIT);
 		}
 
