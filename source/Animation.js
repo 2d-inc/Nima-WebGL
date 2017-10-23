@@ -107,7 +107,7 @@ var Animation = (function ()
 	Animation.prototype.apply = function(time, actor, mix)
 	{
 		var components = this._Components;
-		var imix = 1.0-mix;
+		var imix = mix ? 1.0-mix : 1.0;
 		var actorComponents = actor._Components;
 		for(var i = 0; i < components.length; i++)
 		{
@@ -326,6 +326,14 @@ var Animation = (function ()
 							component._Value = component._Value * imix + value * mix;
 						}
 						break;
+					case AnimatedProperty.Properties.ActiveChildIndex:
+						if(mix === 1.0)
+						{
+							component.setActiveChildIndex(value);
+							markDirty = true;
+							break;
+						}
+						// TODO can this mixed?
 				}
 
 				if(markDirty)
@@ -375,7 +383,8 @@ var AnimatedProperty = (function ()
 		Trigger:11,
 		IntProperty:12,
 		FloatProperty:13,
-		StringProperty:14
+		StringProperty:14,
+		ActiveChildIndex: 18
 	};
 
 

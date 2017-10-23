@@ -16,7 +16,8 @@ var ActorLoader = (function ()
 		ActorEvent:12,
 		CustomIntProperty:13,
 		CustomFloatProperty:14,
-		CustomStringProperty:15
+		CustomStringProperty:15,
+		ActorNodeSolo: 23
 	};
 
 	function ActorLoader()
@@ -89,6 +90,8 @@ var ActorLoader = (function ()
 		var componentCount = reader.readUint16();
 		var actorComponents = actor._Components;
 
+		let VersionedReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode;
+
 		// Guaranteed from the exporter to be in index order.
 		var block = null;
 		while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
@@ -105,7 +108,7 @@ var ActorLoader = (function ()
 					component = _ReadActorEvent(block.reader, new ActorEvent());
 					break;
 				case _BlockTypes.ActorNode:
-					component = _ReadActorNode(block.reader, new ActorNode());
+					component = VersionedReadActorNode(block.reader, new ActorNode());
 					break;
 				case _BlockTypes.ActorBone:
 					component = _ReadActorBone(block.reader, new ActorBone());
@@ -118,6 +121,9 @@ var ActorLoader = (function ()
 					break;
 				case _BlockTypes.ActorIKTarget:
 					component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
+					break;
+				case _BlockTypes.ActorNodeSolo:
+					component = _ReadActorNodeSolo(block.reader, new ActorNodeSolo());
 					break;
 			}
 			if(component)
@@ -211,6 +217,7 @@ var ActorLoader = (function ()
 							case AnimatedProperty.Properties.IntProperty:
 							case AnimatedProperty.Properties.FloatProperty:
 							case AnimatedProperty.Properties.StringProperty:
+							case AnimatedProperty.Properties.ActiveChildIndex:
 								validProperty = true;
 								break;
 							default:
@@ -239,6 +246,7 @@ var ActorLoader = (function ()
 									case AnimatedProperty.Properties.StringProperty:
 									case AnimatedProperty.Properties.Trigger:
 									case AnimatedProperty.Properties.DrawOrder:
+									case AnimatedProperty.Properties.ActiveChildIndex:
 										// These do not interpolate.
 										break;
 									default:
@@ -519,7 +527,7 @@ var ActorLoader = (function ()
 		var block = null;
 		var waitForAtlas = false;
 		while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
-		{
+		{	
 			switch(block.type)
 			{
 				case _BlockTypes.Components:
@@ -595,6 +603,22 @@ var ActorLoader = (function ()
 		component._Rotation = reader.readFloat32();
 		reader.readFloat32Array(component._Scale);
 		component._Opacity = reader.readFloat32();
+
+		return component;
+	}
+
+	function _ReadActorNode13(reader, component)
+	{
+		_ReadActorcomponent(reader, component);
+		component._IsCollapsedVisibility = reader.readUint8() === 1;
+
+		return component;
+	}
+
+	function _ReadActorNodeSolo(reader, component)
+	{
+		_ReadActorNode(reader, component);
+		component._ActiveChildIndex = reader.readFloat32();
 
 		return component;
 	}

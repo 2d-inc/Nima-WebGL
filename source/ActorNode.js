@@ -17,6 +17,9 @@ var ActorNode = (function ()
 		this._Opacity = 1;
 		this._RenderOpacity = 1;
 
+		this._IsCollapsedVisibility = false;
+		this._RenderCollapsed = false;
+
 		this._IsDirty = true;
 		this._IsWorldDirty = true;
 
@@ -25,13 +28,24 @@ var ActorNode = (function ()
 
 	function _UpdateWorldTransform(node)
 	{
+		var parent = node._Parent;
+
+		if(parent)
+		{
+			parent.updateTransforms();
+			var renderCollapsed = (node._IsCollapsedVisibility || parent._RenderCollapsed);
+			if(node._RenderCollapsed != renderCollapsed)
+			{
+				node._RenderCollapsed = renderCollapsed;
+			}
+		}
+
 		node._IsWorldDirty = false;
 
 		var transform = node._OverrideWorldTransform ? node._WorldTransform : mat2d.copy(node._WorldTransform, node.getTransform());
 		
 		node._RenderOpacity = node._Opacity;
 		
-		var parent = node._Parent;
 		if(parent)
 		{
 			parent.updateTransforms();
@@ -336,6 +350,18 @@ var ActorNode = (function ()
 		return vec2.set(vec2.create(), transform[4], transform[5]);
 	};
 
+	ActorNode.prototype.setCollapsedVisibility = function(v)
+	{
+		if(this._IsCollapsedVisibility === v)
+		{
+			return;
+		}
+
+		this._IsCollapsedVisibility = v;
+		this._IsDirty = true;
+		this.markWorldDirty();
+	}
+
 	ActorNode.subclass = function(other)
 	{
 		ActorComponent.subclass(other);
@@ -345,6 +371,7 @@ var ActorNode = (function ()
 		other.prototype.markWorldDirty = ActorNode.prototype.markWorldDirty;
 		other.prototype.getWorldTranslation = ActorNode.prototype.getWorldTranslation;
 		other.prototype.overrideRotation = ActorNode.prototype.overrideRotation;
+		other.prototype.setCollapsedVisibility = ActorNode.prototype.setCollapsedVisibility;
 	};
 
 	ActorNode.prototype.makeInstance = function(resetActor)
