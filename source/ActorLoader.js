@@ -44,7 +44,9 @@ var _BlockTypes = {
 	ColliderPolygon:20, 
 	ColliderLine:21, 
 	ActorImageSequence:22, // TODO
-	ActorStaticMesh:23, // TODO
+	// TODO conflicting with Solo??
+	// ActorStaticMesh:23,
+	ActorNodeSolo:23,
 	NestedActorNode:24,
 	NestedActorAssets:25,
 	NestedActorAsset:26
@@ -85,6 +87,7 @@ function _ReadComponentsBlock(actor, reader)
 {
 	var componentCount = reader.readUint16();
 	var actorComponents = actor._Components;
+	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 
 	// Guaranteed from the exporter to be in index order.
 	var block = null;
@@ -134,6 +137,9 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.NestedActorNode:
 				component = _ReadNestedActor(block.reader, new NestedActorNode(), actor._NestedActorAssets);
+				break;
+			case _BlockTypes.ActorNodeSolo:
+				component = _ReadActorNodeSolo(block.reader, new ActorNodeSolo());
 				break;
 		}
 		if(component)
@@ -229,6 +235,7 @@ function _ReadAnimationBlock(actor, reader)
 						case AnimatedProperty.Properties.StringProperty:
 						case AnimatedProperty.Properties.BooleanProperty:
 						case AnimatedProperty.Properties.IsCollisionEnabled:
+						case AnimatedProperty.Properties.ActiveChildIndex:
 							validProperty = true;
 							break;
 						default:
@@ -259,6 +266,7 @@ function _ReadAnimationBlock(actor, reader)
 								case AnimatedProperty.Properties.StringProperty:
 								case AnimatedProperty.Properties.Trigger:
 								case AnimatedProperty.Properties.DrawOrder:
+								case AnimatedProperty.Properties.ActiveChildIndex:
 									// These do not interpolate.
 									break;
 								default:
@@ -721,7 +729,17 @@ function _ReadActorEvent(reader, component)
 	return component;
 }
 
-function _ReadActorNode(reader, component)
+var _ReadActorNode = null;
+
+function _ReadActorNode13(reader, component)
+{
+	_ReadActorNode12(reader, component);
+	component._IsCollapsedVisibility = reader.readUint8() === 1;
+
+	return component;
+}
+
+function _ReadActorNode12(reader, component)
 {
 	_ReadActorComponent(reader, component);
 
@@ -731,6 +749,12 @@ function _ReadActorNode(reader, component)
 	component._Opacity = reader.readFloat32();
 
 	return component;
+}
+
+function _ReadActorNodeSolo(reader, component)
+{
+	_ReadActorNode(reader, component);
+	component._ActiveChildIndex = reader.readFloat32();
 }
 
 function _ReadActorBone(reader, component)

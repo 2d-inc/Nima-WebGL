@@ -271,7 +271,11 @@ export default class ActorImage extends ActorNode
 				break;
 
 		}
-		if(this._ConnectedBones)
+		if(this._RenderCollapsed)
+		{
+			// don't draw
+		}
+		else if(this._ConnectedBones)
 		{
 			if(this._DeformVertexBuffer)
 			{

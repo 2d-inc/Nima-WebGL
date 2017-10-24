@@ -339,6 +339,11 @@ export default class Animation
 					case AnimatedProperty.Properties.IsCollisionEnabled:
 						component._IsCollisionEnabled = value;
 						break;
+
+					case AnimatedProperty.Properties.ActiveChildIndex:
+						component.setActiveChildIndex(value);
+						markDirty = true;
+						break;
 				}
 
 				if(markDirty)

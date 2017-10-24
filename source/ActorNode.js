@@ -41,6 +41,9 @@ export default class ActorNode extends ActorComponent
 		this._Opacity = 1;
 		this._RenderOpacity = 1;
 
+		this._IsCollapsedVisibility = false;
+		this._RenderCollapsed = false;
+
 		this._IsDirty = true;
 		this._IsWorldDirty = true;
 
@@ -49,13 +52,23 @@ export default class ActorNode extends ActorComponent
 
 	updateWorldTransform()
 	{
+		var parent = this._Parent;
+
+		if(parent)
+		{
+			parent.updateTransforms();
+			var renderCollapsed = (node._IsCollapsedVisibility || parent.renderCollapsed);
+			if(node._RenderCollapsed != renderCollapsed)
+			{
+				node._RenderCollapsed = renderCollapsed;
+			}
+		}
 		this._IsWorldDirty = false;
 
 		var transform = this._OverrideWorldTransform ? this._WorldTransform : mat2d.copy(this._WorldTransform, this.getTransform());
 		
 		this._RenderOpacity = this._Opacity;
 		
-		var parent = this._Parent;
 		if(parent)
 		{
 			parent.updateTransforms();
@@ -228,6 +241,18 @@ export default class ActorNode extends ActorComponent
 	{
 		var transform = this.getWorldTransform();
 		return vec2.set(vec2.create(), transform[4], transform[5]);
+	}
+
+	setCollapsedVisibility(v)
+	{
+		if(this._IsCollapsedVisibility === v)
+		{
+			return;
+		}
+
+		this._IsCollapsedVisibility = v;
+		this._IsDirty = true;
+		this.markWorldDirty();
 	}
 
 	makeInstance(resetActor)
