@@ -3,6 +3,7 @@ import BinaryReader from "./BinaryReader.js";
 import Actor from "./Actor.js";
 import ActorEvent from "./ActorEvent.js";
 import ActorNode from "./ActorNode.js";
+import ActorNodeSolo from "./ActorNodeSolo.js";
 import ActorBone from "./ActorBone.js";
 import ActorRootBone from "./ActorRootBone.js";
 import ActorImage from "./ActorImage.js";
@@ -44,12 +45,11 @@ var _BlockTypes = {
 	ColliderPolygon:20, 
 	ColliderLine:21, 
 	ActorImageSequence:22, // TODO
-	// TODO conflicting with Solo??
-	// ActorStaticMesh:23,
 	ActorNodeSolo:23,
 	NestedActorNode:24,
 	NestedActorAssets:25,
-	NestedActorAsset:26
+	NestedActorAsset:26,
+	ActorStaticMesh:27
 };
 
 function _ReadNextBlock(reader, error)
@@ -755,6 +755,7 @@ function _ReadActorNodeSolo(reader, component)
 {
 	_ReadActorNode(reader, component);
 	component._ActiveChildIndex = reader.readFloat32();
+	return component;
 }
 
 function _ReadActorBone(reader, component)

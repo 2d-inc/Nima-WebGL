@@ -1,3 +1,5 @@
+import ActorNode from "./ActorNode.js";
+
 export default class ActorNodeSolo extends ActorNode
 {
 	constructor()
@@ -6,7 +8,7 @@ export default class ActorNodeSolo extends ActorNode
 		this._ActiveChildIndex = 0;
 	}
 
-	setActiveChild(idx)
+	setActiveChildIndex(idx)
 	{
 		if(this._ActiveChildIndex !== idx)
 		{
@@ -24,7 +26,7 @@ export default class ActorNodeSolo extends ActorNode
 	makeInstance(resetActor)
 	{
 		let node = new ActorNodeSolo();
-		ActorImage.prototype.copy.call(node, this, resetActor);
+		ActorNode.prototype.copy.call(node, this, resetActor);
 		return node;
 	}
 
