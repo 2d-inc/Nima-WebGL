@@ -61,7 +61,8 @@ var SoloSlide = (function ()
 		if(_This._AnimationInstance)
 		{
 			var ai = _This._AnimationInstance;
-			ai.apply(ai._Time + elapsed, _This._ActorInstance, 1.0);
+			ai.time = ai.time + elapsed;
+			ai.apply(_This._ActorInstance, 1.0);
 		}
 
 		if(actor)
@@ -157,15 +158,10 @@ var SoloSlide = (function ()
 			actorInstance.initialize(this._Graphics);
 			if(actorInstance._Animations.length)
 			{
-				this._AnimationInstance = 
-					this._SlideAnimation = actorInstance.getAnimation("Slide");
+				this._SlideAnimation = actorInstance.getAnimation("Slide");
 				this._SoloSkaterAnimation = actorInstance.getAnimation("Solo Skater");
+				this._AnimationInstance = new AnimationInstance(this._SlideAnimation._Actor, this._SlideAnimation);
 				
-				if(!this._AnimationInstance)
-				{
-					this._AnimationInstance = this._SoloSkaterAnimation;
-				}
-
 				if(!this._AnimationInstance) 
 				{
 					console.log("NO ANIMATION IN HERE!?"); return;
