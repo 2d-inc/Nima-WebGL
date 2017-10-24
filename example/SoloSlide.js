@@ -61,7 +61,7 @@ var SoloSlide = (function ()
 		if(_This._AnimationInstance)
 		{
 			var ai = _This._AnimationInstance;
-			ai.apply(ai._Time + elapsed, _This._ActorInstance);
+			ai.apply(ai._Time + elapsed, _This._ActorInstance, 1.0);
 		}
 
 		if(actor)

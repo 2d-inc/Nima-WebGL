@@ -25,7 +25,7 @@ var ActorNodeSolo = (function ()
 
 	ActorNodeSolo.prototype.makeInstance = function(resetActor)
 	{
-		var node = new ActorNode();
+		var node = new ActorNodeSolo();
 		ActorNodeSolo.prototype.copy.call(node, this, resetActor);
 		return node;	
 	};

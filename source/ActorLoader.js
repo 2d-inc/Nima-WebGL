@@ -90,7 +90,7 @@ var ActorLoader = (function ()
 		var componentCount = reader.readUint16();
 		var actorComponents = actor._Components;
 
-		let VersionedReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode;
+		_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 
 		// Guaranteed from the exporter to be in index order.
 		var block = null;
@@ -108,7 +108,7 @@ var ActorLoader = (function ()
 					component = _ReadActorEvent(block.reader, new ActorEvent());
 					break;
 				case _BlockTypes.ActorNode:
-					component = VersionedReadActorNode(block.reader, new ActorNode());
+					component = _ReadActorNode(block.reader, new ActorNode());
 					break;
 				case _BlockTypes.ActorBone:
 					component = _ReadActorBone(block.reader, new ActorBone());
@@ -595,7 +595,9 @@ var ActorLoader = (function ()
 		return component;
 	}
 
-	function _ReadActorNode(reader, component)
+	var _ReadActorNode = null;
+
+	function _ReadActorNode12(reader, component)
 	{
 		_ReadActorComponent(reader, component);
 
@@ -603,15 +605,13 @@ var ActorLoader = (function ()
 		component._Rotation = reader.readFloat32();
 		reader.readFloat32Array(component._Scale);
 		component._Opacity = reader.readFloat32();
-
 		return component;
 	}
 
 	function _ReadActorNode13(reader, component)
 	{
-		_ReadActorcomponent(reader, component);
+		_ReadActorNode12(reader, component);
 		component._IsCollapsedVisibility = reader.readUint8() === 1;
-
 		return component;
 	}
 
@@ -619,7 +619,6 @@ var ActorLoader = (function ()
 	{
 		_ReadActorNode(reader, component);
 		component._ActiveChildIndex = reader.readFloat32();
-
 		return component;
 	}
 
