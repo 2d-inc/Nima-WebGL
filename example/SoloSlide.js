@@ -9,7 +9,7 @@ var SoloSlide = (function ()
 
 	function SoloSlide(canvas)
 	{
-		this._Graphics = new Graphics(canvas);
+		this._Graphics = new Nima.Graphics(canvas);
 		this._LastAdvanceTime = Date.now();
 		this._ViewTransform = mat2d.create();
 		this._AnimationInstance = null;
@@ -119,7 +119,7 @@ var SoloSlide = (function ()
 
 	SoloSlide.prototype.load = function(url, callback)
 	{
-		var loader = new ActorLoader();
+		var loader = new Nima.ActorLoader();
 		var _This = this;
 		loader.load(url, function(actor)
 		{
@@ -160,7 +160,7 @@ var SoloSlide = (function ()
 			{
 				this._SlideAnimation = actorInstance.getAnimation("Slide");
 				this._SoloSkaterAnimation = actorInstance.getAnimation("Solo Skater");
-				this._AnimationInstance = new AnimationInstance(this._SlideAnimation._Actor, this._SlideAnimation);
+				this._AnimationInstance = new Nima.AnimationInstance(this._SlideAnimation._Actor, this._SlideAnimation);
 				
 				if(!this._AnimationInstance) 
 				{

@@ -54,16 +54,17 @@ export default class ActorNode extends ActorComponent
 	{
 		var parent = this._Parent;
 
+		this._IsWorldDirty = false;
+		
 		if(parent)
 		{
 			parent.updateTransforms();
-			var renderCollapsed = (node._IsCollapsedVisibility || parent.renderCollapsed);
-			if(node._RenderCollapsed != renderCollapsed)
+			var renderCollapsed = (this._IsCollapsedVisibility || parent._RenderCollapsed);
+			if(this._RenderCollapsed != renderCollapsed)
 			{
-				node._RenderCollapsed = renderCollapsed;
+				this._RenderCollapsed = renderCollapsed;
 			}
 		}
-		this._IsWorldDirty = false;
 
 		var transform = this._OverrideWorldTransform ? this._WorldTransform : mat2d.copy(this._WorldTransform, this.getTransform());
 		
