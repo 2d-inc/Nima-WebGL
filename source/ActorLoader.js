@@ -18,7 +18,7 @@ import AnimatedComponent from "./AnimatedComponent.js";
 import AnimatedProperty from "./AnimatedProperty.js";
 import NestedActorAsset from "./NestedActorAsset.js";
 import KeyFrame from "./KeyFrame.js";
-import {mat2d} from "gl-matrix";
+import {mat2d, vec2} from "gl-matrix";
 
 var _FirstVersion = 1065353216;
 var _BlockTypes = {
@@ -603,6 +603,7 @@ function _ReadShot(loader, data, callback)
 				_ReadComponentsBlock(actor, block.reader);
 				break;
 			case _BlockTypes.View:
+				actor._ViewCenter = vec2.create();
 				block.reader.readFloat32Array(actor._ViewCenter);
 				actor._ViewWidth = block.reader.readFloat32();
 				actor._ViewHeight = block.reader.readFloat32();
