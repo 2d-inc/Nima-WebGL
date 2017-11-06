@@ -203,7 +203,7 @@ export default class ActorIKTarget extends ActorNode
 
 		// Reset all rotation overrides to FK ones,
 
-		if(this._Bone1Child !== this._Bone2)
+		if(this._Bone1Child && this._Bone1Child !== this._Bone2)
 		{
 			this._Bone1Child.overrideRotation(this._Bone1Child._Rotation);
 		}
