@@ -125,8 +125,12 @@ export default class ActorIKTarget extends ActorNode
 			}
 
 			{
-				bones[j] = components[componentIndex];
-				bones[j]._Dependents.push(this);
+				let bone = components[componentIndex];
+				bones[j] = bone;
+				if(bone)
+				{
+					bone._Dependents.push(this);
+				}
 			}
 		}
 
@@ -291,6 +295,10 @@ export default class ActorIKTarget extends ActorNode
 			for (var i = 0; i < node._InfluencedBones.length; i++)
 			{
 				var ib = node._InfluencedBones[i];
+				if(!ib)
+				{
+					continue;
+				}
 				if(ib.constructor === ActorBone)
 				{
 					this._InfluencedBones.push(ib._Index);

@@ -23,13 +23,18 @@ export default class BinaryReader
 		return v;
 	}
 
-	readFloat32Array(ar, length)
+	readFloat32Array(ar, length, offset)
 	{
+		if(!offset)
+		{
+			offset = 0;
+		}
 		if (!length)
 		{
 			length = ar.length;
 		}
-		for (var i = 0; i < length; i++)
+		let end = offset + length;
+		for (let i = offset; i < end; i++)
 		{
 			ar[i] = this.dataView.getFloat32(this.readIndex, !this.isBigEndian);
 			this.readIndex += 4;

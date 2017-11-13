@@ -1,6 +1,7 @@
 import ActorNode from "./ActorNode.js";
 import {vec2, mat2d} from "gl-matrix";
 
+let White = [1.0, 1.0, 1.0, 1.0];
 export default class ActorImage extends ActorNode
 {
 	constructor()
@@ -21,6 +22,11 @@ export default class ActorImage extends ActorNode
 		this._VertexBuffer = null;
 		this._IndexBuffer = null;
 		this._DeformVertexBuffer = null;
+
+		this._SequenceFrames = null;
+		this._SequenceFrame = 0;
+		this._SequenceUVs = null;
+		this._SequenceUVBuffer = null;
 	}
 
 	get hasVertexDeformAnimation()
@@ -172,7 +178,11 @@ export default class ActorImage extends ActorNode
 				this._IndexBuffer.dispose();
 				this._IndexBuffer = null;
 			}
-
+			if(this._SequenceUVBuffer)
+			{
+				this._SequenceUVBuffer.dispose();
+				this._SequenceUVBuffer = null;
+			}
 		}
 	}
 
@@ -188,9 +198,17 @@ export default class ActorImage extends ActorNode
 			{
 				this._VertexBuffer.dispose();
 			}
+			if(this._SequenceUVBuffer)
+			{
+				this._SequenceUVBuffer.dispose();
+			}
 
 			this._VertexBuffer = graphics.makeVertexBuffer(this._Vertices);
 			this._IndexBuffer = graphics.makeIndexBuffer(this._Triangles);
+			if(this._SequenceUVs)
+			{
+				this._SequenceUVBuffer = graphics.makeVertexBuffer(this._SequenceUVs);
+			}
 		}
 		else if(this._HasVertexDeformAnimation)
 		{
@@ -216,6 +234,7 @@ export default class ActorImage extends ActorNode
 		// Keep vertices for world calculations.
 		// delete this._Vertices;
 		delete this._Triangles;
+		delete this._SequenceUVs;
 
 		this._Texture = actor._Atlases[this._AtlasIndex];
 	}
@@ -238,7 +257,16 @@ export default class ActorImage extends ActorNode
 			for(var i = 0; i < this._ConnectedBones.length; i++)
 			{
 				var cb = this._ConnectedBones[i];
-
+				if(!cb.node)
+				{
+					bt[bidx++] = 1;
+					bt[bidx++] = 0;
+					bt[bidx++] = 0;
+					bt[bidx++] = 1;
+					bt[bidx++] = 0;
+					bt[bidx++] = 0;
+					continue;
+				}
 				cb.node.updateTransforms();
 				var wt = mat2d.mul(mat, cb.node.getWorldTransform(), cb.ibind);
 
@@ -254,6 +282,11 @@ export default class ActorImage extends ActorNode
 
 	draw(graphics)
 	{
+		if(this._RenderCollapsed)
+		{
+			return;
+		}
+
 		var t = this._WorldTransform;
 		switch(this._BlendMode)
 		{
@@ -271,11 +304,28 @@ export default class ActorImage extends ActorNode
 				break;
 
 		}
-		if(this._RenderCollapsed)
+
+		// if(this._ConnectedBones)
+		// {
+		// 	return;
+		// }
+
+		let uvBuffer =  this._SequenceUVBuffer || null;
+		let uvOffset;
+		if(this._SequenceUVBuffer)
 		{
-			// don't draw
+			let numFrames = this._SequenceFrames.length;
+			let frame = this._SequenceFrame%numFrames;
+			if(uvOffset < 0)
+			{
+				frame += numFrames;
+			}
+			uvOffset = this._SequenceFrames[frame].offset;
 		}
-		else if(this._ConnectedBones)
+		graphics.prep(this._Texture, White, this._RenderOpacity, t, this._VertexBuffer, this._ConnectedBones ? this._BoneMatrices : null, this._DeformVertexBuffer, uvBuffer, uvOffset);
+		graphics.draw(this._IndexBuffer);
+
+		/*if(this._ConnectedBones)
 		{
 			if(this._DeformVertexBuffer)
 			{
@@ -296,7 +346,7 @@ export default class ActorImage extends ActorNode
 			{
 				graphics.drawTextured(t, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
 			}
-		}
+		}*/
 	}
 
 	resolveComponentIndices(components)
@@ -309,7 +359,10 @@ export default class ActorImage extends ActorNode
 			{
 				var cb = this._ConnectedBones[j];
 				cb.node = components[cb.componentIndex];
-				cb.node._IsConnectedToImage = true;
+				if(cb.node)
+				{
+					cb.node._IsConnectedToImage = true;
+				}
 			}
 		}
 	}
@@ -337,6 +390,8 @@ export default class ActorImage extends ActorNode
 		// N.B. actor.initialize must've been called before instancing.
 		this._VertexBuffer = node._VertexBuffer;
 		this._IndexBuffer = node._IndexBuffer;
+		this._SequenceUVBuffer = node._SequenceUVBuffer;
+		this._SequenceFrames = node._SequenceFrames;
 		if (node._HasVertexDeformAnimation)
 		{
 			let deformedVertexLength = this._NumVertices * 2;

@@ -21,8 +21,8 @@ import NestedActorAsset from "./NestedActorAsset.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
 
-var _FirstVersion = 1065353216;
-var _BlockTypes = {
+let _FirstVersion = 1065353216;
+let _BlockTypes = {
 	Components:1,
 	ActorNode:2,
 	ActorBone:3,
@@ -44,12 +44,13 @@ var _BlockTypes = {
 	ColliderCircle:19, 
 	ColliderPolygon:20, 
 	ColliderLine:21, 
-	ActorImageSequence:22, // TODO
+	ActorImageSequence:22,
 	ActorNodeSolo:23,
 	NestedActorNode:24,
 	NestedActorAssets:25,
 	NestedActorAsset:26,
-	ActorStaticMesh:27
+	ActorStaticMesh:27,
+	ActorJellyBone:28
 };
 
 function _ReadNextBlock(reader, error)
@@ -58,16 +59,17 @@ function _ReadNextBlock(reader, error)
 	{
 		return null;
 	}
+	let blockType = 0, uint8 = 0;
 	try
 	{
-		var blockType = reader.readUint8();
+		blockType = reader.readUint8();
 		if(blockType === undefined)
 		{
 			return null;
 		}
-		var length = reader.readUint32();
+		let length = reader.readUint32();
 
-		var uint8 = new Uint8Array(length);
+		uint8 = new Uint8Array(length);
 		//console.log("TYPE", blockType, "LENGTH", length);
 		reader.readRaw(uint8, length);
 	}
@@ -85,15 +87,16 @@ function _ReadNextBlock(reader, error)
 
 function _ReadComponentsBlock(actor, reader)
 {
-	var componentCount = reader.readUint16();
-	var actorComponents = actor._Components;
+	let componentCount = reader.readUint16();
+	let actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 
 	// Guaranteed from the exporter to be in index order.
-	var block = null;
+	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
-		var component = null;
+		let component = null;
+		console.log("TYPE", block.type);
 		switch(block.type)
 		{
 			case _BlockTypes.CustomIntProperty:
@@ -126,11 +129,17 @@ function _ReadComponentsBlock(actor, reader)
 			case _BlockTypes.ActorBone:
 				component = _ReadActorBone(block.reader, new ActorBone());
 				break;
+			case _BlockTypes.ActorJellyBone:
+				console.log("JELLY!?");
+				break;
 			case _BlockTypes.ActorRootBone:
 				component = _ReadActorRootBone(block.reader, new ActorRootBone());
 				break;
 			case _BlockTypes.ActorImage:
 				component = _ReadActorImage(block.reader, new ActorImage());
+				break;
+			case _BlockTypes.ActorImageSequence:
+				component = _ReadActorImageSequence(block.reader, new ActorImage());
 				break;
 			case _BlockTypes.ActorIKTarget:
 				component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
@@ -148,13 +157,13 @@ function _ReadComponentsBlock(actor, reader)
 		}
 		actorComponents.push(component);
 	}
-
+	console.log(actorComponents);
 	actor.resolveHierarchy();
 }
 
 function _ReadAnimationBlock(actor, reader)
 {
-	var animation = new Animation(actor);
+	let animation = new Animation(actor);
 	actor._Animations.push(animation);
 
 	if(actor.dataVersion >= 11)
@@ -166,26 +175,27 @@ function _ReadAnimationBlock(actor, reader)
 	}
 
 	// Read the number of keyed nodes.
-	var numKeyedComponents = reader.readUint16();
+	let numKeyedComponents = reader.readUint16();
 	if(numKeyedComponents > 0)
 	{	
-		for(var i = 0; i < numKeyedComponents; i++)
+		for(let i = 0; i < numKeyedComponents; i++)
 		{
-			var componentIndex = reader.readUint16();
-			var component = actor._Components[componentIndex];
+			let componentIndex = reader.readUint16();
+			let component = actor._Components[componentIndex];
+			console.log("HERE?", component, componentIndex);
 			if(!component)
 			{
 				// Bad component was loaded, read past the animation data.
 					// Note this only works after version 12 as we can read by the entire set of properties.
-					var props = reader.readUint16();
-					for(var j = 0; j < props; j++)
+					let props = reader.readUint16();
+					for(let j = 0; j < props; j++)
 					{
-						var propertyBlock = _ReadNextBlock(reader, function(err) {actor.error = err;});
+						let propertyBlock = _ReadNextBlock(reader, function(err) {actor.error = err;});
 					}
 			}
 			else
 			{
-				var animatedComponent = new AnimatedComponent(componentIndex);
+				let animatedComponent = new AnimatedComponent(componentIndex);
 				if(component.constructor === ActorEvent)
 				{
 					// N.B. ActorEvents currently only keyframe their trigger so we cn optimize them into a separate array.
@@ -217,6 +227,7 @@ function _ReadAnimationBlock(actor, reader)
 					}
 
 					let validProperty = false;
+					console.log("PROP", propertyType, AnimatedProperty.Properties.Sequence);
 					switch(propertyType)
 					{
 						case AnimatedProperty.Properties.PosX:
@@ -236,6 +247,7 @@ function _ReadAnimationBlock(actor, reader)
 						case AnimatedProperty.Properties.BooleanProperty:
 						case AnimatedProperty.Properties.IsCollisionEnabled:
 						case AnimatedProperty.Properties.ActiveChildIndex:
+						case AnimatedProperty.Properties.Sequence:
 							validProperty = true;
 							break;
 						default:
@@ -245,14 +257,14 @@ function _ReadAnimationBlock(actor, reader)
 					{
 						continue;
 					}
-					var animatedProperty = new AnimatedProperty(propertyType);
+					let animatedProperty = new AnimatedProperty(propertyType);
 					animatedComponent._Properties.push(animatedProperty);
 
-					var keyFrameCount = propertyReader.readUint16();
-					var lastKeyFrame = null;
-					for(var k = 0; k < keyFrameCount; k++)
+					let keyFrameCount = propertyReader.readUint16();
+					let lastKeyFrame = null;
+					for(let k = 0; k < keyFrameCount; k++)
 					{
-						var keyFrame = new KeyFrame();
+						let keyFrame = new KeyFrame();
 
 						keyFrame._Time = propertyReader.readFloat64();
 
@@ -314,12 +326,12 @@ function _ReadAnimationBlock(actor, reader)
 						}
 						else if(propertyType === AnimatedProperty.Properties.DrawOrder)
 						{
-							var orderedImages = propertyReader.readUint16();
-							var orderValue = [];
-							for(var l = 0; l < orderedImages; l++)
+							let orderedImages = propertyReader.readUint16();
+							let orderValue = [];
+							for(let l = 0; l < orderedImages; l++)
 							{
-								var idx = propertyReader.readUint16();
-								var order = propertyReader.readUint16();
+								let idx = propertyReader.readUint16();
+								let order = propertyReader.readUint16();
 								orderValue.push({
 									componentIdx:idx,
 									value:order
@@ -416,8 +428,8 @@ function _ReadAnimationBlock(actor, reader)
 
 function _ReadAnimationsBlock(actor, reader)
 {
-	var animationsCount = reader.readUint16();
-	var block = null;
+	let animationsCount = reader.readUint16();
+	let block = null;
 	// The animations block only contains a list of animations, so we don't need to track how many we've read in.
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
@@ -438,8 +450,8 @@ function _ReadNestedActorAssetBlock(actor, reader)
 
 function _ReadNestedActorAssets(actor, reader)
 {
-	var nestedActorCount = reader.readUint16();
-	var block = null;
+	let nestedActorCount = reader.readUint16();
+	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
 		switch(block.type)
@@ -491,9 +503,9 @@ function _BuildJpegAtlas(atlas, img, imga, callback)
 
 function _JpegAtlas(dataRGB, dataAlpha, callback)
 {
-	var _This = this;
-	var img = document.createElement("img");
-	var c = 0;
+	let _This = this;
+	let img = document.createElement("img");
+	let c = 0;
 	img.onload = function()
 	{
 		c++;
@@ -503,7 +515,7 @@ function _JpegAtlas(dataRGB, dataAlpha, callback)
 		}
 	};
 	
-	var imga = document.createElement("img");
+	let imga = document.createElement("img");
 	imga.onload = function()
 	{
 		c++;
@@ -582,7 +594,7 @@ function _LoadNestedAssets(loader, actor, callback)
 
 function _ReadShot(loader, data, callback)
 {
-	var reader = new BinaryReader(new Uint8Array(data));
+	let reader = new BinaryReader(new Uint8Array(data));
 	// Check signature
 	if(reader.readUint8() !== 78 || reader.readUint8() !== 73 || reader.readUint8() !== 77 || reader.readUint8() !== 65)
 	{
@@ -590,11 +602,11 @@ function _ReadShot(loader, data, callback)
 		callback(null);
 	}
 
-	var version = reader.readUint32();
-	var actor = new Actor();
+	let version = reader.readUint32();
+	let actor = new Actor();
 	actor.dataVersion = version === _FirstVersion ? 1 : version;
-	var block = null;
-	var waitForAtlas = false;
+	let block = null;
+	let waitForAtlas = false;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
 		switch(block.type)
@@ -706,7 +718,7 @@ function _ReadPolygonCollider(reader, component)
 {
 	_ReadCollider(reader, component);
 
-	var numVertices = reader.readUint32();
+	let numVertices = reader.readUint32();
 	component._ContourVertices = new Float32Array(numVertices * 2);
 	reader.readFloat32Array(component._ContourVertices);
 
@@ -717,7 +729,7 @@ function _ReadLineCollider(reader, component)
 {
 	_ReadCollider(reader, component);
 
-	var numVertices = reader.readUint32();
+	let numVertices = reader.readUint32();
 	component._Vertices = new Float32Array(numVertices * 2);
 	reader.readFloat32Array(component._Vertices);
 
@@ -730,7 +742,7 @@ function _ReadActorEvent(reader, component)
 	return component;
 }
 
-var _ReadActorNode = null;
+let _ReadActorNode = null;
 
 function _ReadActorNode13(reader, component)
 {
@@ -782,12 +794,12 @@ function _ReadActorIKTarget(reader, component)
 	component._Strength = reader.readFloat32();
 	component._InvertDirection = reader.readUint8() === 1;
 
-	var numInfluencedBones = reader.readUint8();
+	let numInfluencedBones = reader.readUint8();
 	if(numInfluencedBones > 0)
 	{
 		component._InfluencedBones = [];
 
-		for(var i = 0; i < numInfluencedBones; i++)
+		for(let i = 0; i < numInfluencedBones; i++)
 		{
 			component._InfluencedBones.push(reader.readUint16());
 		}
@@ -799,21 +811,21 @@ function _ReadActorIKTarget(reader, component)
 function _ReadActorImage(reader, component)
 {
 	_ReadActorNode(reader, component);
-	var isVisible = reader.readUint8();
+	let isVisible = reader.readUint8();
 	if(isVisible)
 	{
 		component._BlendMode = reader.readUint8();
 		component._DrawOrder = reader.readUint16();
 		component._AtlasIndex = reader.readUint8();
 
-		var numConnectedBones = reader.readUint8();
+		let numConnectedBones = reader.readUint8();
 		if(numConnectedBones > 0)
 		{
 			component._ConnectedBones = [];
-			for(var i = 0; i < numConnectedBones; i++)
+			for(let i = 0; i < numConnectedBones; i++)
 			{
-				var bind = mat2d.create();
-				var componentIndex = reader.readUint16();
+				let bind = mat2d.create();
+				let componentIndex = reader.readUint16();
 				reader.readFloat32Array(bind);
 
 				component._ConnectedBones.push({
@@ -824,23 +836,70 @@ function _ReadActorImage(reader, component)
 			}
 
 			// Read the final override parent world.
-			var overrideWorld = mat2d.create();
+			let overrideWorld = mat2d.create();
 			reader.readFloat32Array(overrideWorld);
 			mat2d.copy(component._WorldTransform, overrideWorld);
 			component._OverrideWorldTransform = true;
 		}
 
-		var numVertices = reader.readUint32();
-		var vertexStride = numConnectedBones > 0 ? 12 : 4;
+		let numVertices = reader.readUint32();
+		let vertexStride = numConnectedBones > 0 ? 12 : 4;
 		
 		component._NumVertices = numVertices;
 		component._VertexStride = vertexStride;
 		component._Vertices = new Float32Array(numVertices * vertexStride);
 		reader.readFloat32Array(component._Vertices);
 
-		var numTris = reader.readUint32();
+		let numTris = reader.readUint32();
 		component._Triangles = new Uint16Array(numTris * 3);
 		reader.readUint16Array(component._Triangles);
+	}
+
+	return component;
+}
+
+function _ReadActorImageSequence(reader, component)
+{
+	_ReadActorImage(reader, component);
+
+	// See if it was visible to begin with.
+	if(component._AtlasIndex != -1)
+	{
+		let frameAssetCount = reader.readUint16();
+		component._SequenceFrames = [];
+		let uvs = new Float32Array(component._NumVertices*2*frameAssetCount);
+		let uvStride = component._NumVertices*2;
+		component._SequenceUVs = uvs;
+		let firstFrame = {
+			atlas:component._AtlasIndex,
+			offset:0
+		};
+
+		component._SequenceFrames.push(firstFrame);
+
+		let readIdx = 2;
+		let writeIdx = 0;
+		for(let i = 0; i < component._NumVertices; i++)
+		{
+			uvs[writeIdx++] = component._Vertices[readIdx];
+			uvs[writeIdx++] = component._Vertices[readIdx+1];
+			readIdx += component._VertexStride;
+		}
+
+		let offset = uvStride;
+		for(let i = 1; i < frameAssetCount; i++)
+		{
+
+			let frame = {
+				atlas:reader.readUint8(),
+				offset:offset*4
+			};
+
+			component._SequenceFrames.push(frame);
+			reader.readFloat32Array(uvs, uvStride, offset);
+
+			offset += uvStride;
+		}
 	}
 
 	return component;
@@ -849,12 +908,12 @@ function _ReadActorImage(reader, component)
 function _ReadNestedActor(reader, component, nestedActorAssets)
 {
 	_ReadActorNode(reader, component);
-	var isVisible = reader.readUint8();
+	let isVisible = reader.readUint8();
 	if(isVisible)
 	{
 		// Draw order
 		component._DrawOrder = reader.readUint16();
-		var assetIndex = reader.readUint16();
+		let assetIndex = reader.readUint16();
 		if(assetIndex < nestedActorAssets.length)
 		{
 			component._Asset = nestedActorAssets[assetIndex];
@@ -870,12 +929,12 @@ export default class ActorLoader
 		let loader = this;
 		if(url.constructor === String)
 		{
-			var req = new XMLHttpRequest();
+			let req = new XMLHttpRequest();
 			req.open("GET", url, true);
 			req.responseType = "blob";
 			req.onload = function()
 			{
-				var fileReader = new FileReader();
+				let fileReader = new FileReader();
 				fileReader.onload = function() 
 				{
 					_ReadShot(loader, this.result, callback);
@@ -886,7 +945,7 @@ export default class ActorLoader
 		}
 		else
 		{
-			var fileReader = new FileReader();
+			let fileReader = new FileReader();
 			fileReader.onload = function() 
 			{
 				_ReadShot(loader, this.result, callback);

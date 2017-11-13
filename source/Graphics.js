@@ -27,6 +27,10 @@ export default class Graphics
 		let _ViewportWidth = 0;
 		let _ViewportHeight = 0;
 		let _BlendMode = null;
+		let _ViewDirty = true;
+		let _MaxAttributes = _GL.getParameter(_GL.MAX_VERTEX_ATTRIBS);
+		let _EnabledAttributes = new Uint8Array(_MaxAttributes);
+		let _WantedAttributes = new Uint8Array(_MaxAttributes);
 
 		function _SetSize(width, height)
 		{
@@ -129,71 +133,6 @@ export default class Graphics
 			}
 
 			return tex;
-		}
-
-		function _Bind(shader, buffer, buffer2)
-		{
-			let boundBuffer = _GL.getParameter(_GL.ARRAY_BUFFER_BINDING);
-			let boundShader = _GL.getParameter(_GL.CURRENT_PROGRAM);
-
-			// May need to revisit this based on buffer2
-			if (boundShader === shader && boundBuffer === buffer)
-			{
-				return false;
-			}
-
-			// Disable anything necessary for the old shader.
-			if (boundShader)
-			{
-				let attribCount = _GL.getProgramParameter(boundShader, _GL.ACTIVE_ATTRIBUTES);
-				for (let i = 1; i < attribCount; i++)
-				{
-					_GL.disableVertexAttribArray(i);
-				}
-			}
-
-			if (shader == null)
-			{
-				_GL.useProgram(null);
-				return;
-			}
-
-			// Bind the new one.
-			_GL.useProgram(shader.program);
-
-			// Assume the user knows what they are doing, binding a secondary set of attribs from another buffer.
-			if (buffer2)
-			{
-				_GL.bindBuffer(_GL.ARRAY_BUFFER, buffer2);
-
-				let atts = shader.attributes2;
-				for (let a in atts)
-				{
-					let at = atts[a];
-
-					if (at.index != -1)
-					{
-						_GL.enableVertexAttribArray(at.index);
-						_GL.vertexAttribPointer(at.index, at.size, _GL.FLOAT, false, at.stride, at.offset);
-					}
-				}
-			}
-
-			_GL.bindBuffer(_GL.ARRAY_BUFFER, buffer);
-
-			let atts = shader.attributes;
-			for (let a in atts)
-			{
-				let at = atts[a];
-
-				if (at.index != -1)
-				{
-					_GL.enableVertexAttribArray(at.index);
-					_GL.vertexAttribPointer(at.index, at.size, _GL.FLOAT, false, at.stride, at.offset);
-				}
-			}
-
-			return true;
 		}
 
 		function _DisableBlending()
@@ -341,8 +280,28 @@ export default class Graphics
 			return indexBuffer;
 		}
 
+		function _EnableAttribute(index)
+		{
+			_WantedAttributes[index] = 1;
+			if(_EnabledAttributes[index] === 0)
+			{
+				_EnabledAttributes[index] = 1;
+				_GL.enableVertexAttribArray(index);	
+			}
+		}
+
+		function _DisableAttribute(index)
+		{
+			if(!_EnabledAttributes[index])
+			{
+				_EnabledAttributes[index] = 0;
+				_GL.disableVertexAttribArray(index);	
+			}
+		}
+
 		function _InitializeShader(s)
 		{
+			s.maxAttribIndex = -1;
 			if (!(s.fragment = _GetShader(s.fragment)))
 			{
 				return null;
@@ -367,30 +326,33 @@ export default class Graphics
 
 				for (let a in s.attributes)
 				{
-					if ((s.attributes[a].index = _GL.getAttribLocation(s.program, s.attributes[a].name)) == -1)
+					let name = s.attributes[a];
+					let index = _GL.getAttribLocation(s.program, name);
+					s.attributes[a] = index;
+					if (index === -1)
 					{
 						console.log("Could not find attribute", s.attributes[a].name, "for shader", s.name);
 					}
-				}
-				if (s.attributes2)
-				{
-					for (let a in s.attributes2)
+					else
 					{
-						if ((s.attributes2[a].index = _GL.getAttribLocation(s.program, s.attributes2[a].name)) == -1)
+						if(index > s.maxAttribIndex)
 						{
-							console.log("Could not find attribute", s.attributes2[a].name, "for shader", s.name);
+							s.maxAttribIndex = index;
 						}
 					}
 				}
 				for (let u in s.uniforms)
 				{
 					let name = s.uniforms[u];
-					if ((s.uniforms[u] = _GL.getUniformLocation(s.program, name)) == null)
+					if ((s.uniforms[u] = _GL.getUniformLocation(s.program, name)) === null)
 					{
 						console.log("Could not find uniform", name, "for shader", s.name);
 					}
 				}
 			}
+
+			// We always use texture unit 0 for our sampler. Set it once.
+			_GL.uniform1i(s.uniforms.TextureSampler, 0);
 
 			return s;
 		}
@@ -432,34 +394,20 @@ export default class Graphics
 
 		let _CompiledShaders = new Map();
 		let _ShaderSources = {
-			"Textured.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }",
-			"Textured.fs": "#ifdef GL_ES \nprecision highp float;\n #endif\n uniform vec4 Color; uniform float Opacity; uniform sampler2D TextureSampler; varying vec2 TexCoord; void main(void) {vec4 color = texture2D(TextureSampler, TexCoord) * Color * Opacity; gl_FragColor = color; }",
-			"TexturedSkin.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; attribute vec4 VertexBoneIndices; attribute vec4 VertexWeights; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; uniform vec3 BoneMatrices[82]; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec2 position = vec2(0.0, 0.0); vec4 p = WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); float x = p[0]; float y = p[1]; for(int i = 0; i < 4; i++) {float weight = VertexWeights[i]; int matrixIndex = int(VertexBoneIndices[i])*2; vec3 m = BoneMatrices[matrixIndex]; vec3 n = BoneMatrices[matrixIndex+1]; position[0] += (m[0] * x + m[2] * y + n[1]) * weight; position[1] += (m[1] * x + n[0] * y + n[2]) * weight; } vec4 pos = ViewMatrix * vec4(position.x, position.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }"
+			"Regular.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }",
+			"Textured.fs": "#ifdef GL_ES \nprecision highp float;\n #endif\n uniform vec4 Color; uniform sampler2D TextureSampler; varying vec2 TexCoord; void main(void) {vec4 color = texture2D(TextureSampler, TexCoord) * Color; gl_FragColor = color; }",
+			"Deforming.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; attribute vec4 VertexBoneIndices; attribute vec4 VertexWeights; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; uniform vec3 BoneMatrices[82]; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec2 position = vec2(0.0, 0.0); vec4 p = WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); float x = p[0]; float y = p[1]; for(int i = 0; i < 4; i++) {float weight = VertexWeights[i]; int matrixIndex = int(VertexBoneIndices[i])*2; vec3 m = BoneMatrices[matrixIndex]; vec3 n = BoneMatrices[matrixIndex+1]; position[0] += (m[0] * x + m[2] * y + n[1]) * weight; position[1] += (m[1] * x + n[0] * y + n[2]) * weight; } vec4 pos = ViewMatrix * vec4(position.x, position.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }"
 		};
 
-		let _TexturedShader = _InitializeShader(
+		let _RegularShader = _InitializeShader(
 		{
-			name: "TexturedShader",
-
-			vertex: "Textured.vs",
+			vertex: "Regular.vs",
 			fragment: "Textured.fs",
 
 			attributes:
 			{
-				VertexPosition:
-				{
-					name: "VertexPosition",
-					size: 2,
-					stride: 16,
-					offset: 0
-				},
-				VertexNormal:
-				{
-					name: "VertexTexCoord",
-					size: 2,
-					stride: 16,
-					offset: 8
-				}
+				VertexPosition:"VertexPosition",
+				VertexTexCoord:"VertexTexCoord"
 			},
 
 			uniforms:
@@ -468,38 +416,21 @@ export default class Graphics
 				ViewMatrix: "ViewMatrix",
 				WorldMatrix: "WorldMatrix",
 				TextureSampler: "TextureSampler",
-				Opacity: "Opacity",
 				Color: "Color"
 			}
 		});
 
-		let _DeformedTexturedShader = _InitializeShader(
+		let _DeformingShader = _InitializeShader(
 		{
-			name: "DeformedTexturedShader",
-
-			vertex: "Textured.vs",
+			vertex: "Deforming.vs",
 			fragment: "Textured.fs",
 
 			attributes:
 			{
-				VertexNormal:
-				{
-					name: "VertexTexCoord",
-					size: 2,
-					stride: 16,
-					offset: 8
-				}
-			},
-
-			attributes2:
-			{
-				VertexPosition:
-				{
-					name: "VertexPosition",
-					size: 2,
-					stride: 8,
-					offset: 0
-				}
+				VertexPosition:"VertexPosition",
+				VertexTexCoord:"VertexTexCoord",
+				VertexBoneIndices:"VertexBoneIndices",
+				VertexWeights:"VertexWeights"
 			},
 
 			uniforms:
@@ -508,120 +439,27 @@ export default class Graphics
 				ViewMatrix: "ViewMatrix",
 				WorldMatrix: "WorldMatrix",
 				TextureSampler: "TextureSampler",
-				Opacity: "Opacity",
-				Color: "Color"
-			}
-		});
-
-		let _TexturedSkinShader = _InitializeShader(
-		{
-			name: "TexturedSkinShader",
-
-			vertex: "TexturedSkin.vs",
-			fragment: "Textured.fs",
-
-			attributes:
-			{
-				VertexPosition:
-				{
-					name: "VertexPosition",
-					size: 2,
-					stride: 48,
-					offset: 0
-				},
-				VertexNormal:
-				{
-					name: "VertexTexCoord",
-					size: 2,
-					stride: 48,
-					offset: 8
-				},
-				VertexBoneIndices:
-				{
-					name: "VertexBoneIndices",
-					size: 4,
-					stride: 48,
-					offset: 16
-				},
-				VertexWeights:
-				{
-					name: "VertexWeights",
-					size: 4,
-					stride: 48,
-					offset: 32
-				}
-			},
-
-			uniforms:
-			{
-				ProjectionMatrix: "ProjectionMatrix",
-				ViewMatrix: "ViewMatrix",
-				WorldMatrix: "WorldMatrix",
-				TextureSampler: "TextureSampler",
-				Opacity: "Opacity",
 				Color: "Color",
 				BoneMatrices: "BoneMatrices"
 			}
 		});
 
-		let _DeformedTexturedSkinShader = _InitializeShader(
-		{
-			name: "DeformedTexturedSkinShader",
-
-			vertex: "TexturedSkin.vs",
-			fragment: "Textured.fs",
-
-			attributes:
-			{
-				VertexTexCoord:
-				{
-					name: "VertexTexCoord",
-					size: 2,
-					stride: 48,
-					offset: 8
-				},
-				VertexBoneIndices:
-				{
-					name: "VertexBoneIndices",
-					size: 4,
-					stride: 48,
-					offset: 16
-				},
-				VertexWeights:
-				{
-					name: "VertexWeights",
-					size: 4,
-					stride: 48,
-					offset: 32
-				}
-			},
-
-			attributes2:
-			{
-				VertexPosition:
-				{
-					name: "VertexPosition",
-					size: 2,
-					stride: 8,
-					offset: 0
-				}
-			},
-
-			uniforms:
-			{
-				ProjectionMatrix: "ProjectionMatrix",
-				ViewMatrix: "ViewMatrix",
-				WorldMatrix: "WorldMatrix",
-				TextureSampler: "TextureSampler",
-				Opacity: "Opacity",
-				Color: "Color",
-				BoneMatrices: "BoneMatrices"
-			}
-		});
+		_GL.useProgram(null);
 
 
 		function _SetView(view)
 		{
+			if(_ViewTransform[0] === view[0] &&
+				_ViewTransform[1] === view[1] && 
+				_ViewTransform[4] === view[2] &&
+				_ViewTransform[5] === view[3] &&
+				_ViewTransform[12] === view[4] &&
+				_ViewTransform[13] === view[5])
+			{
+				return;
+			}
+
+			_ViewDirty = true;
 			_ViewTransform[0] = view[0];
 			_ViewTransform[1] = view[1];
 			_ViewTransform[4] = view[2];
@@ -630,138 +468,165 @@ export default class Graphics
 			_ViewTransform[13] = view[5];
 		}
 
-		function _DrawTextured(transform, vertexBuffer, indexBuffer, opacity, color, tex)
-		{
-			_Transform[0] = transform[0];
-			_Transform[1] = transform[1];
-			_Transform[4] = transform[2];
-			_Transform[5] = transform[3];
-			_Transform[12] = transform[4];
-			_Transform[13] = transform[5];
+		//let _LastBufferState = 
+		let _LastBaseBuffer = null;
+		let _LastPositionBuffer = null;
+		let _LastUVBuffer = null;
+		let _LastUVOffset = null;
+		let _LastTexture = null;
 
-			let uniforms = _TexturedShader.uniforms;
-			if(_Bind(_TexturedShader, vertexBuffer.id))
+		function _Prep(tex, color, opacity, world, base, bones, position, uv, uvOffset)
+		{
+			let shader = bones ? _DeformingShader : _RegularShader;
+			let atts = shader.attributes;
+
+			let boundShader = _GL.getParameter(_GL.CURRENT_PROGRAM);
+			let changedShader;
+			if(shader.program !== boundShader)
+			{
+				changedShader = true;
+				_GL.useProgram(shader.program);
+			}
+			else
+			{
+				changedShader = false;
+			}
+
+			// If any buffer changed, rebind attributes.
+			if(changedShader || _LastBaseBuffer !== base || _LastPositionBuffer !== position || _LastUVBuffer !== uv)
+			{
+				_LastBaseBuffer = base;
+				_LastPositionBuffer = position;
+				_LastUVBuffer = uv;
+				_LastUVOffset = uvOffset;
+				
+				// We use the base buffer if: 
+				//	* We're deforming with bones
+				// 		- base buffer contains the Bone Indices and Weights so it's necessary no matter what
+				// 	* There's no custom position buffer
+				//		- means we're not doing an animated vertex deform (user manually moved vertices).
+				// 	* There's no custom uv buffer
+				// 		- means we're not animating texture coordinates (usually done by the image sequencer)
+				let useBaseBuffer = bones || !position || !uv;
+				if(useBaseBuffer)
+				{
+					_GL.bindBuffer(_GL.ARRAY_BUFFER, base.id);
+					let bufferStride = bones ? 48 : 16;
+					//console.log("USING BASE", base.id, bufferStride);
+					if(!position)
+					{
+						// position comes from base buffer.
+						let index = atts.VertexPosition;
+						_EnableAttribute(index);
+						_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, bufferStride, 0);
+					}
+					if(!uv)
+					{
+						// uv comes from base buffer.
+						let index = atts.VertexTexCoord;
+						_EnableAttribute(index);
+						_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, bufferStride, 8);
+						//console.log(index, 2, _GL.FLOAT, false, bufferStride, 8);
+					}
+					if(bones)
+					{
+						let index = atts.VertexBoneIndices;
+						_EnableAttribute(index);
+						_GL.vertexAttribPointer(index, 4, _GL.FLOAT, false, 48, 16);
+
+						index = atts.VertexWeights;
+						_EnableAttribute(index);
+						_GL.vertexAttribPointer(index, 4, _GL.FLOAT, false, 48, 32);
+					}
+				}
+
+				if(position)
+				{
+					// Using a custom position buffer.
+					_GL.bindBuffer(_GL.ARRAY_BUFFER, position.id);
+					let index = atts.VertexPosition;
+					_EnableAttribute(index);
+					_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, 8, 0);
+				}
+
+				if(uv)
+				{
+					// Using a custom uv buffer.
+					_GL.bindBuffer(_GL.ARRAY_BUFFER, uv.id);
+					let index = atts.VertexTexCoord;
+					_EnableAttribute(index);
+					_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, 8, uvOffset);
+				}
+			}
+			else if(uv && _LastUVOffset !== uvOffset)
+			{
+				// Buffer didn't change but uvOffset did.
+				_LastUVOffset = uvOffset;
+				_GL.bindBuffer(_GL.ARRAY_BUFFER, uv.id);
+				_GL.vertexAttribPointer(atts.VertexTexCoord, 2, _GL.FLOAT, false, 8, uvOffset);
+			}
+
+			// Disable unwanted attributes.
+			for(let i = 0; i < _MaxAttributes; i++)
+			{
+				if(_WantedAttributes[i] !== _EnabledAttributes[i])
+				{
+					_GL.disableVertexAttribArray(i);
+					_EnabledAttributes[i] = 0;
+				}
+				_WantedAttributes[i] = 0;
+			}
+
+			// Ok buffers are good, do uniforms.
+			let uniforms = shader.uniforms;
+			if(changedShader || _ViewDirty)
 			{
 				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
 				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
+				_ViewDirty = false;
 			}
 
-			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
-
-			_GL.uniform1f(uniforms.Opacity, opacity);
+			_ColorBuffer[0] = color[0] * opacity;
+			_ColorBuffer[1] = color[1] * opacity;
+			_ColorBuffer[2] = color[2] * opacity;
+			_ColorBuffer[3] = color[3] * opacity;
 			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
 
+			_Transform[0] = world[0];
+			_Transform[1] = world[1];
+			_Transform[4] = world[2];
+			_Transform[5] = world[3];
+			_Transform[12] = world[4];
+			_Transform[13] = world[5];
 			_GL.uniformMatrix4fv(uniforms.WorldMatrix, false, _Transform);
 
-			_GL.activeTexture(_GL.TEXTURE0);
-			_GL.bindTexture(_GL.TEXTURE_2D, tex);
-			_GL.uniform1i(uniforms.TextureSampler, 0);
+			if(bones)
+			{
+				_GL.uniform3fv(uniforms.BoneMatrices, bones);
+			}
 
-			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
-			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
+			if(_LastTexture !== tex)
+			{
+				_GL.activeTexture(_GL.TEXTURE0);
+				_GL.bindTexture(_GL.TEXTURE_2D, tex);
+				_LastTexture = tex;
+			}
 		}
 
-		function _DrawTexturedAndDeformed(transform, deformBuffer, vertexBuffer, indexBuffer, opacity, color, tex)
+		function _Draw(indexBuffer)
 		{
-			_Transform[0] = transform[0];
-			_Transform[1] = transform[1];
-			_Transform[4] = transform[2];
-			_Transform[5] = transform[3];
-			_Transform[12] = transform[4];
-			_Transform[13] = transform[5];
-
-			let uniforms = _DeformedTexturedShader.uniforms;
-			if(_Bind(_DeformedTexturedShader, vertexBuffer.id, deformBuffer.id))
+			let boundBuffer = _GL.getParameter(_GL.ELEMENT_ARRAY_BUFFER_BINDING);
+			if(boundBuffer !== indexBuffer.id)
 			{
-				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
-				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
+				_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			}
-
-			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
-
-			_GL.uniform1f(uniforms.Opacity, opacity);
-			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
-
-			_GL.uniformMatrix4fv(uniforms.WorldMatrix, false, _Transform);
-
-			_GL.activeTexture(_GL.TEXTURE0);
-			_GL.bindTexture(_GL.TEXTURE_2D, tex);
-			_GL.uniform1i(uniforms.TextureSampler, 0);
-
-			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
-			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		}
-
-		function _DrawTexturedSkin(transform, vertexBuffer, indexBuffer, boneMatrices, opacity, color, tex)
-		{
-			_Transform[0] = transform[0];
-			_Transform[1] = transform[1];
-			_Transform[4] = transform[2];
-			_Transform[5] = transform[3];
-			_Transform[12] = transform[4];
-			_Transform[13] = transform[5];
-
-			let uniforms = _TexturedSkinShader.uniforms;
-			if(_Bind(_TexturedSkinShader, vertexBuffer.id))
-			{
-				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
-				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
-			}
-
-			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
-
-			_GL.uniform1f(uniforms.Opacity, opacity);
-			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
-			_GL.uniform3fv(uniforms.BoneMatrices, boneMatrices);
-
-			_GL.uniformMatrix4fv(uniforms.WorldMatrix, false, _Transform);
-
-			_GL.activeTexture(_GL.TEXTURE0);
-			_GL.bindTexture(_GL.TEXTURE_2D, tex);
-			_GL.uniform1i(uniforms.TextureSampler, 0);
-
-			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
-			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
-		}
-
-		function _DrawTexturedAndDeformedSkin(transform, deformBuffer, vertexBuffer, indexBuffer, boneMatrices, opacity, color, tex)
-		{
-			_Transform[0] = transform[0];
-			_Transform[1] = transform[1];
-			_Transform[4] = transform[2];
-			_Transform[5] = transform[3];
-			_Transform[12] = transform[4];
-			_Transform[13] = transform[5];
-
-			let uniforms = _DeformedTexturedSkinShader.uniforms;
-			if(_Bind(_DeformedTexturedSkinShader, vertexBuffer.id, deformBuffer.id))
-			{
-				_GL.uniformMatrix4fv(uniforms.ViewMatrix, false, _ViewTransform);
-				_GL.uniformMatrix4fv(uniforms.ProjectionMatrix, false, _Projection);
-			}
-
-			for (let i = 0; i < 4; i++) _ColorBuffer[i] = color[i];
-
-			_GL.uniform1f(uniforms.Opacity, opacity);
-			_GL.uniform4fv(uniforms.Color, _ColorBuffer);
-			_GL.uniform3fv(uniforms.BoneMatrices, boneMatrices);
-
-			_GL.uniformMatrix4fv(uniforms.WorldMatrix, false, _Transform);
-
-			_GL.activeTexture(_GL.TEXTURE0);
-			_GL.bindTexture(_GL.TEXTURE_2D, tex);
-			_GL.uniform1i(uniforms.TextureSampler, 0);
-
-			_GL.bindBuffer(_GL.ELEMENT_ARRAY_BUFFER, indexBuffer.id);
 			_GL.drawElements(_GL.TRIANGLES, indexBuffer.size, _GL.UNSIGNED_SHORT, 0);
 		}
 
 		function _Dispose()
 		{
-			_GL.deleteProgram(_DeformedTexturedSkinShader.program);
-			_GL.deleteProgram(_TexturedSkinShader.program);
-			_GL.deleteProgram(_DeformedTexturedShader.program);
-			_GL.deleteProgram(_TexturedShader.program);
+			_GL.deleteProgram(_RegularShader.program);
+			_GL.deleteProgram(_DeformingShader.program);
 
 			for(let [key, shader] of _CompiledShaders)
 			{
@@ -781,20 +646,20 @@ export default class Graphics
 		this.clear = _Clear;
 		this.makeVertexBuffer = _MakeVertexBuffer;
 		this.makeIndexBuffer = _MakeIndexBuffer;
-		this.drawTextured = _DrawTextured;
-		this.drawTexturedAndDeformed = _DrawTexturedAndDeformed;
-		this.drawTexturedSkin = _DrawTexturedSkin;
-		this.drawTexturedAndDeformedSkin = _DrawTexturedAndDeformedSkin;
 		this.setView = _SetView;
 		this.dispose = _Dispose;
+		this.prep = _Prep;
+		this.draw = _Draw;
 
 		this.overrideProjection = function(projection)
 		{
 			_Projection = projection;
+			_ViewDirty = true;
 		};
 		this.overrideView = function(view)
 		{
 			_ViewTransform = view;
+			_ViewDirty = true;
 		};
 
 		this.__defineGetter__("viewportWidth", function()

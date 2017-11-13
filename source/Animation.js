@@ -282,10 +282,7 @@ export default class Animation
 					{
 						component._VerticesDirty = true;
 						let nv = component._NumVertices;
-						let stride = component._VertexStride;
 						let to = component._AnimationDeformedVertices;
-						//console.log("TO", component, to);
-						let from = value;
 						let tidx = 0;
 						let fidx = 0;
 						if(mix === 1.0)
@@ -295,7 +292,6 @@ export default class Animation
 								to[tidx] = value[fidx++];
 								to[tidx+1] = value[fidx++];
 								tidx+=2;
-								//tidx += stride;
 							}
 						}
 						else
@@ -305,7 +301,6 @@ export default class Animation
 								to[tidx] = to[tidx] * imix + value[fidx++] * mix;
 								to[tidx+1] = to[tidx+1] * imix + value[fidx++] * mix;
 								tidx+=2;
-								//tidx += stride;
 							}
 						}
 						break;
@@ -338,6 +333,14 @@ export default class Animation
 						break;
 					case AnimatedProperty.Properties.IsCollisionEnabled:
 						component._IsCollisionEnabled = value;
+						break;
+					case AnimatedProperty.Properties.Sequence:
+						var frameIndex = Math.floor(value)%component._SequenceFrames.length;
+						if(frameIndex < 0)
+						{
+							frameIndex += component._SequenceFrames.length;
+						}
+						component._SequenceFrame = frameIndex;
 						break;
 
 					case AnimatedProperty.Properties.ActiveChildIndex:
