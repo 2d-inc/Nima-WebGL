@@ -25,7 +25,6 @@ export default class ActorComponent
 	{
 		if(this._ParentIdx !== undefined)
 		{
-
 			this._Parent = components[this._ParentIdx];
 			if(this.isNode && this._Parent && this._Parent._Children)
 			{

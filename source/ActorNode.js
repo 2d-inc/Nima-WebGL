@@ -22,6 +22,7 @@ function _UpdateTransform(node)
 	return transform;
 }
 
+let CheckTransform = mat2d.create();
 export default class ActorNode extends ActorComponent
 {
 	constructor()
@@ -66,6 +67,8 @@ export default class ActorNode extends ActorComponent
 			}
 		}
 
+		mat2d.copy(CheckTransform, this._OverrideWorldTransform || this._WorldTransform);
+
 		var transform = this._OverrideWorldTransform ? this._WorldTransform : mat2d.copy(this._WorldTransform, this.getTransform());
 		
 		this._RenderOpacity = this._Opacity;
@@ -78,6 +81,11 @@ export default class ActorNode extends ActorComponent
 			{
 				transform = mat2d.mul(transform, parent._WorldTransform, transform);
 			}
+		}
+
+		if(!mat2d.exactEquals(transform, CheckTransform))
+		{
+			// Now notify dependents.
 		}
 
 		return transform;

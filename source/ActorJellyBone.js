@@ -1,7 +1,8 @@
 import ActorNode from "./ActorNode.js";
+import ActorBone from "./ActorBone.js";
 import {vec2, mat2d} from "gl-matrix";
 
-export default class ActorBone extends ActorNode
+export default class ActorJellyBone extends ActorNode
 {
 	constructor()
 	{
@@ -9,7 +10,6 @@ export default class ActorBone extends ActorNode
 
 		this._Length = 0;
 		this._IsConnectedToImage = false;
-		this._JellyBones = null;
 	}
 
 	getTipWorldTranslation()
@@ -22,7 +22,7 @@ export default class ActorBone extends ActorNode
 
 	makeInstance(resetActor)
 	{
-		var node = new ActorBone();
+		var node = new ActorJellyBone();
 		node.copy(this, resetActor);
 		return node;	
 	}
@@ -32,28 +32,14 @@ export default class ActorBone extends ActorNode
 		super.copy(node, resetActor);
 		this._Length = node._Length;
 		this._IsConnectedToImage = node._IsConnectedToImage;
-		if(node._JellyBones)
-		{
-			this._JellyBones = [];
-			this._EaseIn = node._EaseIn;
-			this._EaseOut = node._EaseOut;
-			this._ScaleIn = node._ScaleIn;
-			this._ScaleOut = node._ScaleOut;
-			this._InTargetIdx = node._InTargetIdx;
-			this._OutTargetIdx = node._OutTargetIdx;
-		}
 	}
 
 	resolveComponentIndices(components)
 	{
 		super.resolveComponentIndices(components);
-		if(this._InTargetIdx !== undefined)
+		if(this._Parent && this._Parent.constructor === ActorBone)
 		{
-			this._InTarget = components[this._InTargetIdx];
-		}
-		if(this._OutTargetIdx !== undefined)
-		{
-			this._OutTarget = components[this._OutTargetIdx];
+			this._Parent._JellyBones.push(this);
 		}
 	}
 }

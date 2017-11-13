@@ -5,6 +5,7 @@ import ActorEvent from "./ActorEvent.js";
 import ActorNode from "./ActorNode.js";
 import ActorNodeSolo from "./ActorNodeSolo.js";
 import ActorBone from "./ActorBone.js";
+import ActorJellyBone from "./ActorJellyBone.js";
 import ActorRootBone from "./ActorRootBone.js";
 import ActorImage from "./ActorImage.js";
 import ActorIKTarget from "./ActorIKTarget.js";
@@ -96,7 +97,6 @@ function _ReadComponentsBlock(actor, reader)
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;})) !== null)
 	{
 		let component = null;
-		console.log("TYPE", block.type);
 		switch(block.type)
 		{
 			case _BlockTypes.CustomIntProperty:
@@ -130,7 +130,7 @@ function _ReadComponentsBlock(actor, reader)
 				component = _ReadActorBone(block.reader, new ActorBone());
 				break;
 			case _BlockTypes.ActorJellyBone:
-				console.log("JELLY!?");
+				component = _ReadActorJellyBone(block.reader, new ActorJellyBone());
 				break;
 			case _BlockTypes.ActorRootBone:
 				component = _ReadActorRootBone(block.reader, new ActorRootBone());
@@ -157,7 +157,6 @@ function _ReadComponentsBlock(actor, reader)
 		}
 		actorComponents.push(component);
 	}
-	console.log(actorComponents);
 	actor.resolveHierarchy();
 }
 
@@ -182,7 +181,6 @@ function _ReadAnimationBlock(actor, reader)
 		{
 			let componentIndex = reader.readUint16();
 			let component = actor._Components[componentIndex];
-			console.log("HERE?", component, componentIndex);
 			if(!component)
 			{
 				// Bad component was loaded, read past the animation data.
@@ -227,7 +225,6 @@ function _ReadAnimationBlock(actor, reader)
 					}
 
 					let validProperty = false;
-					console.log("PROP", propertyType, AnimatedProperty.Properties.Sequence);
 					switch(propertyType)
 					{
 						case AnimatedProperty.Properties.PosX:
@@ -775,6 +772,28 @@ function _ReadActorBone(reader, component)
 {
 	_ReadActorNode(reader, component);
 	component._Length = reader.readFloat32();
+	if(!reader.isEOF())
+	{
+		let jellySegments = reader.readUint8();
+		if(jellySegments > 0)
+		{
+			component._JellyBones = [];
+			component._EaseIn = reader.readFloat32();
+			component._EaseOut = reader.readFloat32();
+			component._ScaleIn = reader.readFloat32();
+			component._ScaleOut = reader.readFloat32();
+			component._InTargetIdx = reader.readUint16();
+			component._OutTargetIdx = reader.readUint16();
+		}
+	}
+	return component;
+}
+
+function _ReadActorJellyBone(reader, component)
+{
+	_ReadActorComponent(reader, component);
+	component._Opacity = reader.readFloat32();
+	component._IsCollapsedVisibility = reader.readUint8() === 1;
 
 	return component;
 }
