@@ -5,8 +5,8 @@ var Archer = (function ()
 	var _Scale = 0.2;
 	var _ScreenScale = 1.0;
 
-	var _AimLookup = new Array(40);
-	var _AimWalkingLookup = new Array(40);
+	var _AimLookup = new Array(360);
+	var _AimWalkingLookup = new Array(360);
 	var _Actor;
 
 	var _MaxBoostSpeed = 1000.0;
@@ -184,7 +184,7 @@ var Archer = (function ()
 			{
 				actor._RootNode._Scale[0] = scaleX;	
 				actor._RootNode._IsDirty = true;
-				actor._RootNode.markWorldDirty();
+				actor._RootNode.markTransformDirty();
 			}
 
 			if(_This._IdleAnimation)
@@ -278,7 +278,7 @@ var Archer = (function ()
 			var speedModifier = (_This._Fast ? 1.0 - _This._GroundSpeedProperty.value : _This._GroundSpeedProperty.value)*0.5+0.5;
 			actor._RootNode._Translation[0] += _This._HorizontalSpeed * (speedModifier) * /*(0.5 + 0.5*moveMix) */ elapsed * moveSpeed;	
 			actor._RootNode._IsDirty = true;
-			actor._RootNode.markWorldDirty();
+			actor._RootNode.markTransformDirty();
 
 			if(_JumpNext)
 			{
@@ -349,7 +349,7 @@ var Archer = (function ()
 			}
 			actor._RootNode._Translation[1] = _This._Y;
 			actor._RootNode._IsDirty = true;
-			actor._RootNode.markWorldDirty();
+			actor._RootNode.markTransformDirty();
 
 			if(_This._YVelocity < 0.0)
 			{
@@ -682,6 +682,7 @@ var Archer = (function ()
 						{
 							var position = i / (_AimLookup.length-1) * aim._Duration;
 							aim.apply(position, actor, 1.0);
+							actor.update();
 							var m = arrowNode.getWorldTransform();
 							_AimLookup[i] = [
 								vec2.normalize(vec2.create(), vec2.set(vec2.create(), m[0], m[1])),
@@ -696,6 +697,7 @@ var Archer = (function ()
 						{
 							var position = i / (_AimWalkingLookup.length-1) * aim._Duration;
 							aim.apply(position, actor, 1.0);
+							actor.update();
 							var m = arrowNode.getWorldTransform();
 							_AimWalkingLookup[i] = [
 								vec2.normalize(vec2.create(), vec2.set(vec2.create(), m[0], m[1])),

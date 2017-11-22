@@ -23,6 +23,190 @@ export default class Actor extends Dispatcher
 		this._Solvers = [];
 		this._IsInstance = false;
 		this._IsImageSortDirty = false;
+
+		this._DependencyOrder = null;
+		this._IsDirty = false;
+		this._DirtDepth = 0;
+	}
+
+	addDependency(a, b)
+	{
+		// "a" depends on "b"
+		let dependents = b._Dependents;
+		if(!dependents)
+		{
+			dependents = b._Dependents = [];
+		}
+		if(dependents.indexOf(a) !== -1)
+		{
+			return false;
+		}
+		dependents.push(a);
+		return true;
+	}
+
+	sortDependencies()
+	{
+		let perm = new Set();
+		let temp = new Set();
+
+		let order = [];
+
+		function visit(n)
+		{
+			if(perm.has(n))
+			{
+				return true;
+			}
+			if(temp.has(n))
+			{
+				console.warn("Dependency cycle!", n);
+				return false;
+			}
+			
+			temp.add(n);
+
+			let dependents = n._Dependents;
+			if(dependents)
+			{
+				for(let d of dependents)
+				{
+					if(!visit(d))
+					{
+						return false;
+					}
+				}
+			}
+			perm.add(n);
+			order.unshift(n);
+			
+			return true;
+		}
+
+		if(!visit(this._RootNode))
+		{
+			// We have cyclic dependencies.
+			return false;
+		}
+
+		for(let i = 0; i < order.length; i++)
+		{
+			let component = order[i];
+			component._GraphOrder = i;
+			component._DirtMask = 255;
+		}
+		this._Order = order;
+		this._IsDirty = true;
+		console.log("ORDER", order);
+	}
+
+	addDirtToDependents(component, value)
+	{
+		let dependents = component._Dependents;
+		if(dependents)
+		{
+			for(let d of dependents)
+			{
+				this.addDirt(d, value, true);
+			}
+		}
+	}
+
+	addDirt(component, value, recurse)
+	{
+		if((component._DirtMask & value) === value)
+		{
+			// Already marked.
+			return false;
+		}
+
+		// Make sure dirt is set before calling anything that can set more dirt.
+		let dirt = component._DirtMask | value;
+		component._DirtMask = dirt;
+
+		this._IsDirty = true;
+
+		component.onDirty(dirt);
+
+		// If the order of this component is less than the current dirt depth, update the dirt depth
+		// so that the update loop can break out early and re-run (something up the tree is dirty).
+		if(component._GraphOrder < this._DirtDepth)
+		{
+			this._DirtDepth = component._GraphOrder;	
+		}
+		if(!recurse)
+		{
+			return true;
+		}
+		let dependents = component._Dependents;
+		if(dependents)
+		{
+			for(let d of dependents)
+			{
+				this.addDirt(d, value, recurse);
+			}
+		}
+
+		return true;
+	}
+
+	subUpdate(upTo)
+	{
+		if(!this._IsDirty)
+		{
+			return false;
+		}
+		let order = this._Order;
+		for(let i = 0; i <= upTo._GraphOrder; i++)
+		{
+			let component = order[i];
+			let d = component._DirtMask;
+			if(component._DirtMask === 0)
+			{
+				continue;
+			}
+			component._DirtMask[i] = 0;
+			component.update(d);
+		}
+	}
+
+	update()
+	{
+		if(!this._IsDirty)
+		{
+			return false;
+		}
+		
+		let order = this._Order;
+		let end = order.length;
+
+		const maxSteps = 100;
+		let step = 0;
+		while(this._IsDirty && step < maxSteps)
+		{
+			this._IsDirty = false;
+			// Track dirt depth here so that if something else marks dirty, we restart.
+			for(let i = 0; i < end; i++)
+			{
+				let component = order[i];
+				this._DirtDepth = i;
+				let d = component._DirtMask;
+				if(d === 0)
+				{
+					continue;
+				}
+				component._DirtMask = 0;
+				component.update(d);
+
+				if(this._DirtDepth < i)
+				{
+					break;
+				}
+			}
+			step++;
+		}
+
+		return true;
 	}
 
 	get root()
@@ -37,6 +221,7 @@ export default class Actor extends Dispatcher
 		{
 			if(component != null)
 			{
+				component._Actor = this;
 				component.resolveComponentIndices(components);
 				if(component.isNode)
 				{
@@ -54,6 +239,16 @@ export default class Actor extends Dispatcher
 				}
 			}
 		}
+
+		for(let component of components)
+		{
+			if(component != null)
+			{
+				component.completeResolve();
+			}
+		}
+
+		this.sortDependencies();
 
 		this._Drawables.sort(function(a,b)
 		{
@@ -112,57 +307,59 @@ export default class Actor extends Dispatcher
 
 	advance(seconds)
 	{
-		// First iterate solvers to see if any is dirty.
-		let solvers = this._Solvers;
-		let runSolvers = false;
-		for(let solver of solvers)
-		{
-			if(solver.needsSolve())
-			{
-				runSolvers = true;
-				break;
-			}
-		}
+		// // First iterate solvers to see if any is dirty.
+		// let solvers = this._Solvers;
+		// let runSolvers = false;
+		// for(let solver of solvers)
+		// {
+		// 	if(solver.needsSolve())
+		// 	{
+		// 		runSolvers = true;
+		// 		break;
+		// 	}
+		// }
 
-		let nodes = this._Nodes;
-		for(let node of nodes)
-		{
-			if(node)
-			{
-				node.updateTransforms();
-			}
-		}
+		// let nodes = this._Nodes;
+		// for(let node of nodes)
+		// {
+		// 	if(node)
+		// 	{
+		// 		node.updateTransforms();
+		// 	}
+		// }
 
-		if(runSolvers)
-		{
-			for(let solver of solvers)
-			{
-				solver.solveStart();
-			}	
+		// if(runSolvers)
+		// {
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver.solveStart();
+		// 	}	
 
-			for(let solver of solvers)
-			{
-				solver.solve();
-			}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver.solve();
+		// 	}
 
-			for(let solver of solvers)
-			{
-				solver._SuppressMarkDirty = true;
-			}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver._SuppressMarkDirty = true;
+		// 	}
 
-			for(let node of nodes)
-			{
-				if(node)
-				{
-					node.updateTransforms();
-				}
-			}
+		// 	for(let node of nodes)
+		// 	{
+		// 		if(node)
+		// 		{
+		// 			node.updateTransforms();
+		// 		}
+		// 	}
 
-			for(let solver of solvers)
-			{
-				solver._SuppressMarkDirty = false;
-			}
-		}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver._SuppressMarkDirty = false;
+		// 	}
+		// }
+
+		this.update();
 
 		let components = this._Components;
 		// Advance last (update graphics buffers and such).
@@ -321,6 +518,18 @@ export default class Actor extends Dispatcher
 			}
 			component.resolveComponentIndices(this._Components);
 		}
+
+		for(let i = 1; i < this._Components.length; i++)
+		{
+			let component = this._Components[i];
+			if(component == null)
+			{
+				continue;
+			}
+			component.completeResolve();
+		}
+
+		this.sortDependencies();
 
 		this._Drawables.sort(function(a,b)
 		{

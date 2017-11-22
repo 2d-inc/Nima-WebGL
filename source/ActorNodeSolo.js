@@ -10,17 +10,28 @@ export default class ActorNodeSolo extends ActorNode
 
 	setActiveChildIndex(idx)
 	{
-		if(this._ActiveChildIndex !== idx)
-		{
-			this._ActiveChildIndex = idx;
+		this._ActiveChildIndex = idx;
 
-			for(var i = 0; i < this._Children.length; ++i)
-			{
-				var an = this._Children[i];
-				var cv = i !== (this._ActiveChildIndex - 1);
-				an.setCollapsedVisibility(cv);
-			}
+		for(var i = 0; i < this._Children.length; ++i)
+		{
+			var an = this._Children[i];
+			var cv = i !== (this._ActiveChildIndex - 1);
+			an.setCollapsedVisibility(cv);
 		}
+	}
+
+	set activeChildIndex(index)
+	{
+		if(index === this._ActiveChildIndex)
+		{
+			return;
+		}
+		this.setActiveChildIndex(index);
+	}
+
+	get activeChildIndex()
+	{
+		return this._ActiveChildIndex;
 	}
 
 	makeInstance(resetActor)
@@ -34,5 +45,11 @@ export default class ActorNodeSolo extends ActorNode
 	{
 		super.copy(node, resetActor);
 		this._ActiveChildIndex = node._ActiveChildIndex;
+	}
+
+	completeResolve()
+	{
+		// Hierarchy is resolved.
+		this.setActiveChildIndex(this._ActiveChildIndex);
 	}
 }

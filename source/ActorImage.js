@@ -94,7 +94,7 @@ export default class ActorImage extends ActorNode
 		let readIdx = 0;
 		let writeIdx = 0;
 
-		let world = this.getWorldTransform();
+		let world = this._WorldTransform;
 
 		let nv = this._NumVertices;
 		let deformed = new Float32Array(nv*2);
@@ -267,8 +267,13 @@ export default class ActorImage extends ActorNode
 					bt[bidx++] = 0;
 					continue;
 				}
-				cb.node.updateTransforms();
-				var wt = mat2d.mul(mat, cb.node.getWorldTransform(), cb.ibind);
+				//cb.node.updateTransforms();
+				if(Number.isNaN(cb.node._WorldTransform[0]) && !window.done)
+				{
+					window.done = true;
+					console.log(cb.node._Name, cb.node._Parent._Transform, cb.node._WorldTransform);
+				}
+				var wt = mat2d.mul(mat, cb.node._WorldTransform, cb.ibind);
 
 				bt[bidx++] = wt[0];
 				bt[bidx++] = wt[1];

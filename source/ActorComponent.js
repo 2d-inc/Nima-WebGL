@@ -5,6 +5,11 @@ export default class ActorComponent
 		this._Name = "Component";
 		this._Parent = null;
 		this._CustomProperties = [];
+		this._DirtMask = 0;
+		this._GraphOrder = -1;
+		this._Dependents = null;
+		this._Actor = null;
+		this._ParentIdx = -1;
 	}
 
 	get parent()
@@ -12,9 +17,19 @@ export default class ActorComponent
 		return this._Parent;
 	}
 
+	onDirty(dirt)
+	{
+
+	}
+
 	initialize(actor, graphics)
 	{
 
+	}
+
+	update(dirt)
+	{
+		
 	}
 
 	advance(seconds)
@@ -23,14 +38,23 @@ export default class ActorComponent
 
 	resolveComponentIndices(components)
 	{
-		if(this._ParentIdx !== undefined)
+		if(this._ParentIdx !== -1)
 		{
-			this._Parent = components[this._ParentIdx];
-			if(this.isNode && this._Parent && this._Parent._Children)
+			let parent = components[this._ParentIdx];
+			this._Parent = parent;
+			if(this.isNode && parent && parent._Children)
 			{
-				this._Parent._Children.push(this);
+				parent._Children.push(this);
+			}
+			if(parent)
+			{
+				this._Actor.addDependency(this, parent);
 			}
 		}
+	}
+
+	completeResolve()
+	{
 	}
 
 	copy(component, resetActor)
@@ -38,6 +62,7 @@ export default class ActorComponent
 		this._Name = component._Name;
 		this._ParentIdx = component._ParentIdx;
 		this._Idx = component._Idx;
+		this._Actor = resetActor;
 	}
 
 	getCustomProperty(name)

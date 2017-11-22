@@ -4,7 +4,7 @@ import {vec2, mat2d} from "gl-matrix";
 
 function _Solve2(b1, b2, worldTargetTranslation, invert)
 {
-	let world = b1._Parent.getWorldTransform();
+	let world = b1._Parent._WorldTransform;
 	let b1c = b2;
 	while(b1c && b1c._Parent != b1)
 	{
@@ -27,6 +27,12 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 	let pC = b1.getTipWorldTranslation();
 	let pB = b2.getTipWorldTranslation();
 	let pBT = vec2.copy(vec2.create(), worldTargetTranslation);
+	if(!window.first)
+	{
+		window.first = true;
+		console.log(pA, pC, pB, pBT);
+	}
+	
 
 	pA = vec2.transformMat2d(pA, pA, iworld);
 	pC = vec2.transformMat2d(pC, pC, iworld);
@@ -49,7 +55,7 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 	let angleCorrection = 0;
 	if(b1c != b2)
 	{
-		let world2 = b1c.getWorldTransform();
+		let world2 = b1c._WorldTransform;
 		let iworld2 = mat2d.invert(mat2d.create(), world2);
 		if(!iworld2)
 		{
@@ -78,13 +84,13 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 
 function _Solve1(b1, worldTargetTranslation)
 {
-	var world2 = b1.getWorldTransform();
+	var world2 = b1._WorldTransform;
 	var iworld2 = mat2d.invert(mat2d.create(), world2);
 
 	var targetLocal = vec2.transformMat2d(vec2.create(), worldTargetTranslation, iworld2);
 	var a = Math.atan2(targetLocal[1], targetLocal[0]);
 
-	b1.overrideRotation(b1._OverrideRotation+a);
+	b1.overrideRotation(b1.actualRotation+a);
 }
 
 export default class ActorIKTarget extends ActorNode
@@ -123,15 +129,9 @@ export default class ActorIKTarget extends ActorNode
 			{
 				componentIndex = componentIndex._Index;
 			}
-
-			{
-				let bone = components[componentIndex];
-				bones[j] = bone;
-				if(bone)
-				{
-					bone._Dependents.push(this);
-				}
-			}
+			
+			let bone = components[componentIndex];
+			bones[j] = bone;
 		}
 
 		this._Bone1 = bones[0];
@@ -156,74 +156,63 @@ export default class ActorIKTarget extends ActorNode
 			this._Chain.push({bone:end, angle:0, in:bones.indexOf(end) != -1 || bones.indexOf(end._Parent) != -1});
 			end = end._Parent;
 		}
+
+		for(let bone of bones)
+		{
+			this._Actor.addDependency(bone, this);
+		}
+		let last = bones[bones.length-1];
+		last.addConstraint(this);
 	}
 
-	initialize()
+	constrain(tip)
 	{
-		let bones = this._InfluencedBones;
-		if(!bones.length)
-		{
-			return;
-		}
-		this._Bone1 = bones[0];
-		this._Bone2 = bones[bones.length-1];
-		let b1c = this._Bone2;
-		let b1 = this._Bone1;
-		if(bones.length > 1)
-		{
-			while(b1c && b1c._Parent != b1)
-			{
-				b1c = b1c._Parent;
-			}
-		}
 
-		this._Bone1Child = b1c;
-
-		let end = this._Bone2;
-		this._Chain = [];
-		while(end && end != b1._Parent)
+		this.solve();
+		if(this._Solver)
 		{
-			// if the bone or the parent of the bone is in, then we will manipulate the rotation, so it's in.
-			this._Chain.push({bone:end, angle:0, in:bones.indexOf(end) != -1 || bones.indexOf(end._Parent) != -1});
-			end = end._Parent;
-		}
-	}
-
-	needsSolve()
-	{
-		if(this._IsWorldDirty || this._IsDirty)
-		{
+			var pos = mat2d.getTranslation(vec2.create(), this.worldTransform);
+			this._Solver.solve(pos, this._Strength);
 			return true;
 		}
 		return false;
 	}
 
-	solveStart()
-	{
-		if(this._Bone1 === null)
-		{
-			return;
-		}
+	// needsSolve()
+	// {
+	// 	if(this._IsWorldDirty || this._IsDirty)
+	// 	{
+	// 		return true;
+	// 	}
+	// 	return false;
+	// }
 
-		// Reset all rotation overrides to FK ones,
+	// solveStart()
+	// {
+	// 	if(this._Bone1 === null)
+	// 	{
+	// 		return;
+	// 	}
 
-		if(this._Bone1Child && this._Bone1Child !== this._Bone2)
-		{
-			this._Bone1Child.overrideRotation(this._Bone1Child._Rotation);
-		}
+	// 	// Reset all rotation overrides to FK ones,
 
-		var bones = this._InfluencedBones;
-		for(var i = 0; i < bones.length; i++)
-		{
-			var b = bones[i];
-			b.overrideRotation(b._Rotation);
-		}
-	}
+	// 	if(this._Bone1Child && this._Bone1Child !== this._Bone2)
+	// 	{
+	// 		this._Bone1Child.overrideRotation(this._Bone1Child._Rotation);
+	// 	}
+
+	// 	var bones = this._InfluencedBones;
+	// 	for(var i = 0; i < bones.length; i++)
+	// 	{
+	// 		var b = bones[i];
+	// 		b.overrideRotation(b._Rotation);
+	// 	}
+	// }
 
 	solve()
 	{
 		let worldTargetTranslation = vec2.create();
-		let wt = this.getWorldTransform();
+		let wt = this._WorldTransform;
 		worldTargetTranslation[0] = wt[4];
 		worldTargetTranslation[1] = wt[5];
 
@@ -235,12 +224,12 @@ export default class ActorIKTarget extends ActorNode
 
 		if(!chain)
 		{
-			return;
+			return false;
 		}
 		for(let i = 0; i < chain.length; i++)
 		{
 			let fk = chain[i];
-			fk.angle = fk.bone._OverrideRotation;
+			fk.angle = fk.bone.actualRotation;
 		}
 
 		if(bones.length === 1)
@@ -269,10 +258,12 @@ export default class ActorIKTarget extends ActorNode
 				let fk = chain[i];
 				if(fk.in)
 				{
-					fk.bone.overrideRotation(fk.bone._OverrideRotation * m + fk.angle * im);
+					fk.bone.overrideRotation(fk.bone.actualRotation * m + fk.angle * im);
 				}
 			}
 		}
+
+		return true;
 	}
 
 	makeInstance(resetActor)

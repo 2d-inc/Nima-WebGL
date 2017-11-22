@@ -6,6 +6,7 @@ import ActorNode from "./ActorNode.js";
 import ActorNodeSolo from "./ActorNodeSolo.js";
 import ActorBone from "./ActorBone.js";
 import ActorJellyBone from "./ActorJellyBone.js";
+import JellyComponent from "./JellyComponent.js";
 import ActorRootBone from "./ActorRootBone.js";
 import ActorImage from "./ActorImage.js";
 import ActorIKTarget from "./ActorIKTarget.js";
@@ -51,7 +52,8 @@ let _BlockTypes = {
 	NestedActorAssets:25,
 	NestedActorAsset:26,
 	ActorStaticMesh:27,
-	ActorJellyBone:28
+	JellyComponent: 28,
+	ActorJellyBone: 29
 };
 
 function _ReadNextBlock(reader, error)
@@ -132,6 +134,9 @@ function _ReadComponentsBlock(actor, reader)
 			case _BlockTypes.ActorJellyBone:
 				component = _ReadActorJellyBone(block.reader, new ActorJellyBone());
 				break;
+			case _BlockTypes.JellyComponent:
+				component = _ReadJellyComponent(block.reader, new JellyComponent());
+				break;
 			case _BlockTypes.ActorRootBone:
 				component = _ReadActorRootBone(block.reader, new ActorRootBone());
 				break;
@@ -142,7 +147,7 @@ function _ReadComponentsBlock(actor, reader)
 				component = _ReadActorImageSequence(block.reader, new ActorImage());
 				break;
 			case _BlockTypes.ActorIKTarget:
-				component = _ReadActorIKTarget(block.reader, new ActorIKTarget());
+				component = _ReadActorIKTarget(actor.dataVersion, block.reader, new ActorIKTarget());
 				break;
 			case _BlockTypes.NestedActorNode:
 				component = _ReadNestedActor(block.reader, new NestedActorNode(), actor._NestedActorAssets);
@@ -772,20 +777,6 @@ function _ReadActorBone(reader, component)
 {
 	_ReadActorNode(reader, component);
 	component._Length = reader.readFloat32();
-	if(!reader.isEOF())
-	{
-		let jellySegments = reader.readUint8();
-		if(jellySegments > 0)
-		{
-			component._JellyBones = [];
-			component._EaseIn = reader.readFloat32();
-			component._EaseOut = reader.readFloat32();
-			component._ScaleIn = reader.readFloat32();
-			component._ScaleOut = reader.readFloat32();
-			component._InTargetIdx = reader.readUint16();
-			component._OutTargetIdx = reader.readUint16();
-		}
-	}
 	return component;
 }
 
@@ -798,6 +789,19 @@ function _ReadActorJellyBone(reader, component)
 	return component;
 }
 
+function _ReadJellyComponent(reader, component)
+{
+	_ReadActorComponent(reader, component);
+	component._EaseIn = reader.readFloat32();
+	component._EaseOut = reader.readFloat32();
+	component._ScaleIn = reader.readFloat32();
+	component._ScaleOut = reader.readFloat32();
+	component._InTargetIdx = reader.readUint16();
+	component._OutTargetIdx = reader.readUint16();
+
+	return component;
+}
+
 function _ReadActorRootBone(reader, component)
 {
 	_ReadActorNode(reader, component);
@@ -805,11 +809,15 @@ function _ReadActorRootBone(reader, component)
 	return component;
 }
 
-function _ReadActorIKTarget(reader, component)
+function _ReadActorIKTarget(version, reader, component)
 {
 	_ReadActorNode(reader, component);
 
-	component._Order = reader.readUint16();
+	// We no longer read order in versions above 14 as order is implicit.
+	if(version < 14)
+	{
+		component._Order = reader.readUint16();
+	}
 	component._Strength = reader.readFloat32();
 	component._InvertDirection = reader.readUint8() === 1;
 

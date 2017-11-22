@@ -344,15 +344,14 @@ export default class Animation
 						break;
 
 					case AnimatedProperty.Properties.ActiveChildIndex:
-						component.setActiveChildIndex(value);
+						component.activeChildIndex = value;
 						markDirty = true;
 						break;
 				}
 
 				if(markDirty)
 				{
-					component._IsDirty = true;
-					component.markWorldDirty();
+					component.markTransformDirty();
 				}
 			}
 		}
