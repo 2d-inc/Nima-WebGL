@@ -97,7 +97,6 @@ export default class Actor extends Dispatcher
 		}
 		this._Order = order;
 		this._IsDirty = true;
-		console.log("ORDER", order);
 	}
 
 	addDirtToDependents(component, value)
@@ -165,7 +164,7 @@ export default class Actor extends Dispatcher
 			{
 				continue;
 			}
-			component._DirtMask[i] = 0;
+			component._DirtMask = 0;
 			component.update(d);
 		}
 	}
