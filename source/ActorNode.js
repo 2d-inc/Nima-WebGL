@@ -347,7 +347,7 @@ export default class ActorNode extends ActorComponent
 	{
 		return this._WorldTransform;
 	}
-	
+
 	get worldTranslation()
 	{
 		var transform = this._WorldTransform;

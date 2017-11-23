@@ -27,11 +27,6 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 	let pC = b1.tipWorldTranslation;
 	let pB = b2.tipWorldTranslation;
 	let pBT = vec2.copy(vec2.create(), worldTargetTranslation);
-	if(!window.first)
-	{
-		window.first = true;
-		console.log(pA, pC, pB, pBT);
-	}
 	
 
 	pA = vec2.transformMat2d(pA, pA, iworld);
@@ -86,11 +81,16 @@ function _Solve1(b1, worldTargetTranslation)
 {
 	var world2 = b1._WorldTransform;
 	var iworld2 = mat2d.invert(mat2d.create(), world2);
-
+	if(!iworld2)
+	{
+		return false;
+	}
 	var targetLocal = vec2.transformMat2d(vec2.create(), worldTargetTranslation, iworld2);
 	var a = Math.atan2(targetLocal[1], targetLocal[0]);
 
 	b1.overrideRotation(b1.actualRotation+a);
+
+	return true;
 }
 
 export default class ActorIKTarget extends ActorNode
@@ -167,47 +167,22 @@ export default class ActorIKTarget extends ActorNode
 
 	constrain(tip)
 	{
-
-		this.solve();
-		if(this._Solver)
-		{
-			var pos = mat2d.getTranslation(vec2.create(), this.worldTransform);
-			this._Solver.solve(pos, this._Strength);
-			return true;
-		}
-		return false;
+		return this.solve();
 	}
 
-	// needsSolve()
-	// {
-	// 	if(this._IsWorldDirty || this._IsDirty)
-	// 	{
-	// 		return true;
-	// 	}
-	// 	return false;
-	// }
+	get strength()
+	{
+		return this._Strength;
+	}
 
-	// solveStart()
-	// {
-	// 	if(this._Bone1 === null)
-	// 	{
-	// 		return;
-	// 	}
-
-	// 	// Reset all rotation overrides to FK ones,
-
-	// 	if(this._Bone1Child && this._Bone1Child !== this._Bone2)
-	// 	{
-	// 		this._Bone1Child.overrideRotation(this._Bone1Child._Rotation);
-	// 	}
-
-	// 	var bones = this._InfluencedBones;
-	// 	for(var i = 0; i < bones.length; i++)
-	// 	{
-	// 		var b = bones[i];
-	// 		b.overrideRotation(b._Rotation);
-	// 	}
-	// }
+	set strength(s)
+	{
+		if(this._Strength !== s)
+		{
+			this._Strength = s;
+			this.markConstraintsDirty();
+		}
+	}
 
 	solve()
 	{

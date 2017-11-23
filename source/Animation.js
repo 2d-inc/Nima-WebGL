@@ -237,13 +237,12 @@ export default class Animation
 					case AnimatedProperty.Properties.IKStrength:
 						if(mix === 1.0)
 						{
-							component._Strength = value;
+							component.strength = value;
 						}
 						else
 						{
-							component._Strength = component._Strength * imix + value * mix;	
+							component.strength = component._Strength * imix + value * mix;	
 						}
-						markDirty = true;
 						break;
 					case AnimatedProperty.Properties.DrawOrder:
 						if(actor._LastSetDrawOrder != value)
