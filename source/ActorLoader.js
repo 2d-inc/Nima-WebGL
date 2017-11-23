@@ -600,8 +600,9 @@ function _ReadShot(loader, data, callback)
 	// Check signature
 	if(reader.readUint8() !== 78 || reader.readUint8() !== 73 || reader.readUint8() !== 77 || reader.readUint8() !== 65)
 	{
-		console.log("Bad nima signature.");
+		console.error("Bad nima signature.");
 		callback(null);
+		return;
 	}
 
 	let version = reader.readUint32();
