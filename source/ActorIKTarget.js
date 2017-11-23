@@ -23,9 +23,9 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 		return false;
 	}
 
-	let pA = b1.getWorldTranslation();
-	let pC = b1.getTipWorldTranslation();
-	let pB = b2.getTipWorldTranslation();
+	let pA = b1.worldTranslation;
+	let pC = b1.tipWorldTranslation;
+	let pB = b2.tipWorldTranslation;
 	let pBT = vec2.copy(vec2.create(), worldTargetTranslation);
 	if(!window.first)
 	{
@@ -62,7 +62,7 @@ function _Solve2(b1, b2, worldTargetTranslation, invert)
 			return false;
 		}
 
-		let pa2 = b2.getTipWorldTranslation();
+		let pa2 = b2.tipWorldTranslation;
 		let tipBone2Local = vec2.transformMat2d(pa2, pa2, iworld2);
 		let a = Math.atan2(tipBone2Local[1], tipBone2Local[0]);
 

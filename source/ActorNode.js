@@ -126,6 +126,22 @@ export default class ActorNode extends ActorComponent
 		return true;
 	}
 
+	get translation()
+	{
+		return this._Translation;
+	}
+
+	set translation(t)
+	{
+		if(vec2.exactEquals(this._Translation, t))
+		{
+			return;
+		}
+
+		vec2.copy(this._Translation, t);
+		this.markTransformDirty();
+	}
+
 	get x()
 	{
 		return this._Translation[0];
@@ -136,7 +152,6 @@ export default class ActorNode extends ActorComponent
 		if(this._Translation[0] != value)
 		{
 			this._Translation[0] = value;
-			this._IsDirty = true;
 			this.markTransformDirty();
 		}
 	}
@@ -151,7 +166,6 @@ export default class ActorNode extends ActorComponent
 		if(this._Translation[1] != value)
 		{
 			this._Translation[1] = value;
-			this._IsDirty = true;
 			this.markTransformDirty();
 		}
 	}
@@ -166,7 +180,6 @@ export default class ActorNode extends ActorComponent
 		if(this._Scale[0] != value)
 		{
 			this._Scale[0] = value;
-			this._IsDirty = true;
 			this.markTransformDirty();
 		}
 	}
@@ -181,7 +194,6 @@ export default class ActorNode extends ActorComponent
 		if(this._Scale[1] != value)
 		{
 			this._Scale[1] = value;
-			this._IsDirty = true;
 			this.markTransformDirty();
 		}
 	}
@@ -331,7 +343,12 @@ export default class ActorNode extends ActorComponent
 		return this._WorldTransform;
 	}
 
-	getWorldTranslation()
+	get worldTransform()
+	{
+		return this._WorldTransform;
+	}
+	
+	get worldTranslation()
 	{
 		var transform = this._WorldTransform;
 		return vec2.set(vec2.create(), transform[4], transform[5]);
