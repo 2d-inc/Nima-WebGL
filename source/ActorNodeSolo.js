@@ -37,13 +37,14 @@ export default class ActorNodeSolo extends ActorNode
 	makeInstance(resetActor)
 	{
 		let node = new ActorNodeSolo();
-		ActorNode.prototype.copy.call(node, this, resetActor);
+		node.copy(this, resetActor);
 		return node;
 	}
 
 	copy(node, resetActor)
 	{
 		super.copy(node, resetActor);
+
 		this._ActiveChildIndex = node._ActiveChildIndex;
 	}
 

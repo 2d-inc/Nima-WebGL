@@ -769,7 +769,7 @@ function _ReadActorNode12(reader, component)
 function _ReadActorNodeSolo(reader, component)
 {
 	_ReadActorNode(reader, component);
-	component._ActiveChildIndex = reader.readFloat32();
+	component._ActiveChildIndex = reader.readUint32();
 	return component;
 }
 
