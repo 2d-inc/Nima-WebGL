@@ -10,7 +10,7 @@ export default class ActorNodeSolo extends ActorNode
 
 	setActiveChildIndex(idx)
 	{
-		this._ActiveChildIndex = idx;
+		this._ActiveChildIndex = Math.min(this._Children.length, Math.max(0, idx));
 
 		for(var i = 0; i < this._Children.length; ++i)
 		{

@@ -205,6 +205,7 @@ export default class ActorImage extends ActorNode
 
 			this._VertexBuffer = graphics.makeVertexBuffer(this._Vertices);
 			this._IndexBuffer = graphics.makeIndexBuffer(this._Triangles);
+
 			if(this._SequenceUVs)
 			{
 				this._SequenceUVBuffer = graphics.makeVertexBuffer(this._SequenceUVs);
@@ -235,7 +236,6 @@ export default class ActorImage extends ActorNode
 		// delete this._Vertices;
 		delete this._Triangles;
 		delete this._SequenceUVs;
-
 		this._Texture = actor._Atlases[this._AtlasIndex];
 	}
 
@@ -266,12 +266,6 @@ export default class ActorImage extends ActorNode
 					bt[bidx++] = 0;
 					bt[bidx++] = 0;
 					continue;
-				}
-				//cb.node.updateTransforms();
-				if(Number.isNaN(cb.node._WorldTransform[0]) && !window.done)
-				{
-					window.done = true;
-					console.log(cb.node._Name, cb.node._Parent._Transform, cb.node._WorldTransform);
 				}
 				var wt = mat2d.mul(mat, cb.node._WorldTransform, cb.ibind);
 
@@ -310,11 +304,6 @@ export default class ActorImage extends ActorNode
 
 		}
 
-		// if(this._ConnectedBones)
-		// {
-		// 	return;
-		// }
-
 		let uvBuffer =  this._SequenceUVBuffer || null;
 		let uvOffset;
 		if(this._SequenceUVBuffer)
@@ -327,31 +316,9 @@ export default class ActorImage extends ActorNode
 			}
 			uvOffset = this._SequenceFrames[frame].offset;
 		}
+
 		graphics.prep(this._Texture, White, this._RenderOpacity, t, this._VertexBuffer, this._ConnectedBones ? this._BoneMatrices : null, this._DeformVertexBuffer, uvBuffer, uvOffset);
 		graphics.draw(this._IndexBuffer);
-
-		/*if(this._ConnectedBones)
-		{
-			if(this._DeformVertexBuffer)
-			{
-				graphics.drawTexturedAndDeformedSkin(t, this._DeformVertexBuffer, this._VertexBuffer, this._IndexBuffer, this._BoneMatrices, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-			else
-			{
-				graphics.drawTexturedSkin(t, this._VertexBuffer, this._IndexBuffer, this._BoneMatrices, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-		}
-		else
-		{
-			if(this._DeformVertexBuffer)
-			{
-				graphics.drawTexturedAndDeformed(t, this._DeformVertexBuffer, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-			else
-			{
-				graphics.drawTextured(t, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-		}*/
 	}
 
 	resolveComponentIndices(components)

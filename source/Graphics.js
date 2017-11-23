@@ -301,7 +301,6 @@ export default class Graphics
 
 		function _InitializeShader(s)
 		{
-			s.maxAttribIndex = -1;
 			if (!(s.fragment = _GetShader(s.fragment)))
 			{
 				return null;
@@ -318,7 +317,7 @@ export default class Graphics
 
 			if (!_GL.getProgramParameter(s.program, _GL.LINK_STATUS))
 			{
-				console.log("Could not link shader", s.name, _GL.getProgramInfoLog(s.program));
+				console.warn("Could not link shader", s.name, _GL.getProgramInfoLog(s.program));
 			}
 			else
 			{
@@ -331,14 +330,7 @@ export default class Graphics
 					s.attributes[a] = index;
 					if (index === -1)
 					{
-						console.log("Could not find attribute", s.attributes[a].name, "for shader", s.name);
-					}
-					else
-					{
-						if(index > s.maxAttribIndex)
-						{
-							s.maxAttribIndex = index;
-						}
+						console.warn("Could not find attribute", s.attributes[a].name, "for shader", s.name);
 					}
 				}
 				for (let u in s.uniforms)
@@ -346,13 +338,13 @@ export default class Graphics
 					let name = s.uniforms[u];
 					if ((s.uniforms[u] = _GL.getUniformLocation(s.program, name)) === null)
 					{
-						console.log("Could not find uniform", name, "for shader", s.name);
+						console.warn("Could not find uniform", name, "for shader", s.name);
 					}
 				}
-			}
 
-			// We always use texture unit 0 for our sampler. Set it once.
-			_GL.uniform1i(s.uniforms.TextureSampler, 0);
+				// We always use texture unit 0 for our sampler. Set it once.
+				_GL.uniform1i(s.uniforms.TextureSampler, 0);
+			}
 
 			return s;
 		}
@@ -384,7 +376,7 @@ export default class Graphics
 
 				if (!_GL.getShaderParameter(shader, _GL.COMPILE_STATUS))
 				{
-					console.log("Failed to compile", id);
+					console.error("Failed to compile", id);
 					return null;
 				}
 				_CompiledShaders.set(id, shader);
@@ -446,7 +438,6 @@ export default class Graphics
 
 		_GL.useProgram(null);
 
-
 		function _SetView(view)
 		{
 			if(_ViewTransform[0] === view[0] &&
@@ -477,6 +468,7 @@ export default class Graphics
 
 		function _Prep(tex, color, opacity, world, base, bones, position, uv, uvOffset)
 		{
+
 			let shader = bones ? _DeformingShader : _RegularShader;
 			let atts = shader.attributes;
 
@@ -512,7 +504,6 @@ export default class Graphics
 				{
 					_GL.bindBuffer(_GL.ARRAY_BUFFER, base.id);
 					let bufferStride = bones ? 48 : 16;
-					//console.log("USING BASE", base.id, bufferStride);
 					if(!position)
 					{
 						// position comes from base buffer.
@@ -526,7 +517,6 @@ export default class Graphics
 						let index = atts.VertexTexCoord;
 						_EnableAttribute(index);
 						_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, bufferStride, 8);
-						//console.log(index, 2, _GL.FLOAT, false, bufferStride, 8);
 					}
 					if(bones)
 					{
@@ -557,6 +547,17 @@ export default class Graphics
 					_EnableAttribute(index);
 					_GL.vertexAttribPointer(index, 2, _GL.FLOAT, false, 8, uvOffset);
 				}
+
+				// Disable unwanted attributes.
+				for(let i = 0; i < _MaxAttributes; i++)
+				{
+					if(_WantedAttributes[i] !== _EnabledAttributes[i])
+					{
+						_GL.disableVertexAttribArray(i);
+						_EnabledAttributes[i] = 0;
+					}
+					_WantedAttributes[i] = 0;
+				}
 			}
 			else if(uv && _LastUVOffset !== uvOffset)
 			{
@@ -564,17 +565,6 @@ export default class Graphics
 				_LastUVOffset = uvOffset;
 				_GL.bindBuffer(_GL.ARRAY_BUFFER, uv.id);
 				_GL.vertexAttribPointer(atts.VertexTexCoord, 2, _GL.FLOAT, false, 8, uvOffset);
-			}
-
-			// Disable unwanted attributes.
-			for(let i = 0; i < _MaxAttributes; i++)
-			{
-				if(_WantedAttributes[i] !== _EnabledAttributes[i])
-				{
-					_GL.disableVertexAttribArray(i);
-					_EnabledAttributes[i] = 0;
-				}
-				_WantedAttributes[i] = 0;
 			}
 
 			// Ok buffers are good, do uniforms.
