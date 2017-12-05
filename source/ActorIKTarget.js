@@ -217,8 +217,13 @@ export default class ActorIKTarget extends ActorNode
 		}
 		else
 		{
+			let actor = tip._Actor;
 			for(let i = 0; i < bones.length-1; i++)
 			{
+				if(i > 0)
+				{
+					actor.subUpdate(tip);
+				}
 				_Solve2(bones[i], tip, worldTargetTranslation);
 			}
 		}

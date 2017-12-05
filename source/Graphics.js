@@ -465,6 +465,17 @@ export default class Graphics
 		let _LastUVBuffer = null;
 		let _LastUVOffset = null;
 		let _LastTexture = null;
+		let _LastShader = null;
+
+		function _InvalidateCache()
+		{
+			_LastBaseBuffer = null;
+			_LastPositionBuffer = null;
+			_LastUVBuffer = null;
+			_LastUVOffset = null;
+			_LastTexture = null;
+			_LastShader = null;
+		}
 
 		function _Prep(tex, color, opacity, world, base, bones, position, uv, uvOffset)
 		{
@@ -472,12 +483,12 @@ export default class Graphics
 			let shader = bones ? _DeformingShader : _RegularShader;
 			let atts = shader.attributes;
 
-			let boundShader = _GL.getParameter(_GL.CURRENT_PROGRAM);
 			let changedShader;
-			if(shader.program !== boundShader)
+			if(shader.program !== _LastShader)
 			{
 				changedShader = true;
 				_GL.useProgram(shader.program);
+				_LastShader = shader.program;
 			}
 			else
 			{
@@ -646,6 +657,9 @@ export default class Graphics
 			_Projection = projection;
 			_ViewDirty = true;
 		};
+
+		this.invalidateCache = _InvalidateCache;
+		
 		this.overrideView = function(view)
 		{
 			_ViewTransform = view;
