@@ -392,8 +392,6 @@ function constrainRotation(fk, rotation)
 		transform[2] = transform[0] * skew + transform[2];
 		transform[3] = transform[1] * skew + transform[3];
 	}
-console.log("TRANSFORM", rotation, scaleX, scaleY, skew);
-	
 
 	mat2d.mul(fk.bone.worldTransform, parentWorld, transform);
 }

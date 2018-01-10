@@ -21,6 +21,7 @@ import AnimatedComponent from "./AnimatedComponent.js";
 import AnimatedProperty from "./AnimatedProperty.js";
 import NestedActorAsset from "./NestedActorAsset.js";
 import ActorIKConstraint from "./ActorIKConstraint.js";
+import ActorDistanceConstraint from "./ActorDistanceConstraint.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
 
@@ -165,6 +166,9 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.ActorIKConstraint:
 				component = _ReadActorIKConstraint(block.reader, new ActorIKConstraint());
+				break;
+			case _BlockTypes.ActorDistanceConstraint:
+				component = _ReadActorDistanceConstraint(block.reader, new ActorDistanceConstraint());
 				break;
 		}
 		if(component)
@@ -877,6 +881,16 @@ function _ReadActorIKConstraint(reader, component)
 			component._InfluencedBones.push(reader.readUint16());
 		}
 	}
+	return component;
+}
+
+function _ReadActorDistanceConstraint(reader, component)
+{
+	_ReadActorTargetedConstraint(reader, component);
+
+	component._Distance = reader.readFloat32();
+	component._Mode = reader.readUint8();
+	
 	return component;
 }
 
