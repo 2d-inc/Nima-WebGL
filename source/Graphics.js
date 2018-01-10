@@ -27,10 +27,13 @@ export default class Graphics
 		let _ViewportWidth = 0;
 		let _ViewportHeight = 0;
 		let _BlendMode = null;
+		let _HoldBlendMode = false;
 		let _ViewDirty = true;
 		let _MaxAttributes = _GL.getParameter(_GL.MAX_VERTEX_ATTRIBS);
 		let _EnabledAttributes = new Uint8Array(_MaxAttributes);
 		let _WantedAttributes = new Uint8Array(_MaxAttributes);
+		let _CurrentShaderGroup = null;
+		let _SecondTexture = null;
 
 		function _SetSize(width, height)
 		{
@@ -137,7 +140,7 @@ export default class Graphics
 
 		function _DisableBlending()
 		{
-			if (_BlendMode === 0)
+			if (_HoldBlendMode || _BlendMode === 0)
 			{
 				return;
 			}
@@ -147,7 +150,7 @@ export default class Graphics
 
 		function _EnableBlending()
 		{
-			if (_BlendMode === 1)
+			if (_HoldBlendMode || _BlendMode === 1)
 			{
 				return;
 			}
@@ -159,7 +162,7 @@ export default class Graphics
 
 		function _EnableScreenBlending()
 		{
-			if (_BlendMode === 2)
+			if (_HoldBlendMode || _BlendMode === 2)
 			{
 				return;
 			}
@@ -181,7 +184,7 @@ export default class Graphics
 
 		function _EnablePremultipliedBlending()
 		{
-			if (_BlendMode === 4)
+			if (_HoldBlendMode || _BlendMode === 4)
 			{
 				return;
 			}
@@ -192,13 +195,35 @@ export default class Graphics
 
 		function _EnableAdditiveBlending()
 		{
-			if (_BlendMode === 5)
+			if (_HoldBlendMode || _BlendMode === 5)
 			{
 				return;
 			}
 			_BlendMode = 5;
 			_GL.enable(_GL.BLEND);
 			_GL.blendFuncSeparate(_GL.ONE, _GL.ONE, _GL.ONE, _GL.ONE);
+		}
+
+		function _EnableMod2xBlending()
+		{
+			if (_HoldBlendMode || _BlendMode === 6)
+			{
+				return;
+			}
+			_BlendMode = 6;
+			_GL.enable(_GL.BLEND);
+			//_GL.blendFuncSeparate(_GL.DST_COLOR, _GL.SRC_COLOR, _GL.DST_ALPHA, _GL.ONE_MINUS_SRC_ALPHA);
+			_GL.blendFunc(_GL.DST_COLOR, _GL.SRC_COLOR);
+		}
+
+		function _SetHoldBlendMode()
+		{
+			_HoldBlendMode = true;
+		}
+
+		function _SetReleaseBlendMode()
+		{
+			_HoldBlendMode = false;
 		}
 
 		function VertexBuffer(id)
@@ -344,6 +369,10 @@ export default class Graphics
 
 				// We always use texture unit 0 for our sampler. Set it once.
 				_GL.uniform1i(s.uniforms.TextureSampler, 0);
+				if(s.uniforms.SecondTextureSampler)
+				{
+					_GL.uniform1i(s.uniforms.SecondTextureSampler, 1);
+				}
 			}
 
 			return s;
@@ -386,55 +415,87 @@ export default class Graphics
 
 		let _CompiledShaders = new Map();
 		let _ShaderSources = {
-			"Regular.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }",
+			"Regular.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; varying vec2 TexCoord; varying vec2 ScreenCoord; void main(void) {TexCoord = VertexTexCoord; vec4 pos = ProjectionMatrix * ViewMatrix * WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); ScreenCoord = pos.xy/pos.w; gl_Position = pos; }",
 			"Textured.fs": "#ifdef GL_ES \nprecision highp float;\n #endif\n uniform vec4 Color; uniform sampler2D TextureSampler; varying vec2 TexCoord; void main(void) {vec4 color = texture2D(TextureSampler, TexCoord) * Color; gl_FragColor = color; }",
 			"Deforming.vs": "attribute vec2 VertexPosition; attribute vec2 VertexTexCoord; attribute vec4 VertexBoneIndices; attribute vec4 VertexWeights; uniform mat4 ProjectionMatrix; uniform mat4 WorldMatrix; uniform mat4 ViewMatrix; uniform vec3 BoneMatrices[82]; varying vec2 TexCoord; void main(void) {TexCoord = VertexTexCoord; vec2 position = vec2(0.0, 0.0); vec4 p = WorldMatrix * vec4(VertexPosition.x, VertexPosition.y, 0.0, 1.0); float x = p[0]; float y = p[1]; for(int i = 0; i < 4; i++) {float weight = VertexWeights[i]; int matrixIndex = int(VertexBoneIndices[i])*2; vec3 m = BoneMatrices[matrixIndex]; vec3 n = BoneMatrices[matrixIndex+1]; position[0] += (m[0] * x + m[2] * y + n[1]) * weight; position[1] += (m[1] * x + n[0] * y + n[2]) * weight; } vec4 pos = ViewMatrix * vec4(position.x, position.y, 0.0, 1.0); gl_Position = ProjectionMatrix * vec4(pos.xyz, 1.0); }"
 		};
+		let _DefaultShaders = _MakeCustomShader();
+		_CurrentShaderGroup = _DefaultShaders;
 
-		let _RegularShader = _InitializeShader(
+		function _UseCustomShader(shaderGroup)
 		{
-			vertex: "Regular.vs",
-			fragment: "Textured.fs",
+			_CurrentShaderGroup = shaderGroup || _DefaultShaders;
+		}
 
-			attributes:
-			{
-				VertexPosition:"VertexPosition",
-				VertexTexCoord:"VertexTexCoord"
-			},
-
-			uniforms:
-			{
-				ProjectionMatrix: "ProjectionMatrix",
-				ViewMatrix: "ViewMatrix",
-				WorldMatrix: "WorldMatrix",
-				TextureSampler: "TextureSampler",
-				Color: "Color"
-			}
-		});
-
-		let _DeformingShader = _InitializeShader(
+		function _UseSecondTexture(tex)
 		{
-			vertex: "Deforming.vs",
-			fragment: "Textured.fs",
-
-			attributes:
+			if(_SecondTexture !== tex)
 			{
-				VertexPosition:"VertexPosition",
-				VertexTexCoord:"VertexTexCoord",
-				VertexBoneIndices:"VertexBoneIndices",
-				VertexWeights:"VertexWeights"
-			},
-
-			uniforms:
-			{
-				ProjectionMatrix: "ProjectionMatrix",
-				ViewMatrix: "ViewMatrix",
-				WorldMatrix: "WorldMatrix",
-				TextureSampler: "TextureSampler",
-				Color: "Color",
-				BoneMatrices: "BoneMatrices"
+				_GL.activeTexture(_GL.TEXTURE1);
+				_GL.bindTexture(_GL.TEXTURE_2D, tex);
+				_SecondTexture = tex;
 			}
-		});
+		}
+
+		function _MakeCustomShader(name, fragment)
+		{
+			if(fragment)
+			{
+				name += ".fs";
+				_ShaderSources[name] = fragment;
+			}
+			let _RegularShader = _InitializeShader(
+			{
+				vertex: "Regular.vs",
+				fragment: name || "Textured.fs",
+
+				attributes:
+				{
+					VertexPosition:"VertexPosition",
+					VertexTexCoord:"VertexTexCoord"
+				},
+
+				uniforms:
+				{
+					ProjectionMatrix: "ProjectionMatrix",
+					ViewMatrix: "ViewMatrix",
+					WorldMatrix: "WorldMatrix",
+					TextureSampler: "TextureSampler",
+					SecondTextureSampler: "SecondTextureSampler",
+					Color: "Color"
+				}
+			});
+
+			let _DeformingShader = _InitializeShader(
+			{
+				vertex: "Deforming.vs",
+				fragment: name || "Textured.fs",
+
+				attributes:
+				{
+					VertexPosition:"VertexPosition",
+					VertexTexCoord:"VertexTexCoord",
+					VertexBoneIndices:"VertexBoneIndices",
+					VertexWeights:"VertexWeights"
+				},
+
+				uniforms:
+				{
+					ProjectionMatrix: "ProjectionMatrix",
+					ViewMatrix: "ViewMatrix",
+					WorldMatrix: "WorldMatrix",
+					TextureSampler: "TextureSampler",
+					SecondTextureSampler: "SecondTextureSampler",
+					Color: "Color",
+					BoneMatrices: "BoneMatrices"
+				}
+			});
+
+			return {
+				regular:_RegularShader,
+				deforming:_DeformingShader
+			};
+		}
 
 		_GL.useProgram(null);
 
@@ -479,8 +540,7 @@ export default class Graphics
 
 		function _Prep(tex, color, opacity, world, base, bones, position, uv, uvOffset)
 		{
-
-			let shader = bones ? _DeformingShader : _RegularShader;
+			let shader = bones ? _CurrentShaderGroup.deforming : _CurrentShaderGroup.regular;
 			let atts = shader.attributes;
 
 			let changedShader;
@@ -626,8 +686,8 @@ export default class Graphics
 
 		function _Dispose()
 		{
-			_GL.deleteProgram(_RegularShader.program);
-			_GL.deleteProgram(_DeformingShader.program);
+			_GL.deleteProgram(_DefaultShaders.regular.program);
+			_GL.deleteProgram(_DefaultShaders.deforming.program);
 
 			for(let [key, shader] of _CompiledShaders)
 			{
@@ -644,6 +704,7 @@ export default class Graphics
 		this.enableAdditiveBlending = _EnableAdditiveBlending;
 		this.enableScreenBlending = _EnableScreenBlending;
 		this.enableMultiplyBlending = _EnableMultiplyBlending;
+		this.enableMod2xBlending = _EnableMod2xBlending;
 		this.clear = _Clear;
 		this.makeVertexBuffer = _MakeVertexBuffer;
 		this.makeIndexBuffer = _MakeIndexBuffer;
@@ -651,6 +712,11 @@ export default class Graphics
 		this.dispose = _Dispose;
 		this.prep = _Prep;
 		this.draw = _Draw;
+		this.makeCustomShader = _MakeCustomShader;
+		this.useCustomShader = _UseCustomShader;
+		this.holdBlendMode = _SetHoldBlendMode;
+		this.releaseBlendMode = _SetReleaseBlendMode;
+		this.useSecondTexture = _UseSecondTexture;
 
 		this.overrideProjection = function(projection)
 		{
