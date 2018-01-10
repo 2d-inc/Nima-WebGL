@@ -22,6 +22,7 @@ import AnimatedProperty from "./AnimatedProperty.js";
 import NestedActorAsset from "./NestedActorAsset.js";
 import ActorIKConstraint from "./ActorIKConstraint.js";
 import ActorDistanceConstraint from "./ActorDistanceConstraint.js";
+import ActorTransformConstraint from "./ActorTransformConstraint.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
 
@@ -82,7 +83,7 @@ function _ReadNextBlock(reader, error)
 		let length = reader.readUint32();
 
 		uint8 = new Uint8Array(length);
-		//console.log("TYPE", blockType, "LENGTH", length);
+		console.log("TYPE", blockType, "LENGTH", length);
 		reader.readRaw(uint8, length);
 	}
 	catch(err)
@@ -169,6 +170,9 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.ActorDistanceConstraint:
 				component = _ReadActorDistanceConstraint(block.reader, new ActorDistanceConstraint());
+				break;
+			case _BlockTypes.ActorTransformConstraint:
+				component = _ReadActorTransformConstraint(block.reader, new ActorTransformConstraint());
 				break;
 		}
 		if(component)
@@ -890,7 +894,17 @@ function _ReadActorDistanceConstraint(reader, component)
 
 	component._Distance = reader.readFloat32();
 	component._Mode = reader.readUint8();
-	
+
+	return component;
+}
+
+function _ReadActorTransformConstraint(reader, component)
+{
+	_ReadActorTargetedConstraint(reader, component);
+
+	component._SourceSpace = reader.readUint8();
+	component._DestSpace = reader.readUint8();
+
 	return component;
 }
 
