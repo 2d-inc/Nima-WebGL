@@ -20,8 +20,10 @@ import CustomProperty from "./CustomProperty.js";
 import AnimatedComponent from "./AnimatedComponent.js";
 import AnimatedProperty from "./AnimatedProperty.js";
 import NestedActorAsset from "./NestedActorAsset.js";
+import ActorIKConstraint from "./ActorIKConstraint.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
+
 
 let _FirstVersion = 1065353216;
 let _BlockTypes = {
@@ -53,7 +55,13 @@ let _BlockTypes = {
 	NestedActorAsset:26,
 	ActorStaticMesh:27,
 	JellyComponent: 28,
-	ActorJellyBone: 29
+	ActorJellyBone: 29,
+	ActorIKConstraint: 30,
+	ActorDistanceConstraint: 31,
+	ActorTranslationConstraint: 32,
+	ActorRotationConstraint: 33,
+	ActorScaleConstraint: 34,
+	ActorTransformConstraint: 35
 };
 
 function _ReadNextBlock(reader, error)
@@ -154,6 +162,9 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.ActorNodeSolo:
 				component = _ReadActorNodeSolo(block.reader, new ActorNodeSolo());
+				break;
+			case _BlockTypes.ActorIKConstraint:
+				component = _ReadActorIKConstraint(block.reader, new ActorIKConstraint());
 				break;
 		}
 		if(component)
@@ -833,6 +844,39 @@ function _ReadActorIKTarget(version, reader, component)
 		}
 	}
 
+	return component;
+}
+
+function _ReadActorConstraint(reader, component)
+{
+	_ReadActorComponent(reader, component);
+	component._Strength = reader.readFloat32();
+	component._IsEnabled = reader.readUint8() === 1;
+}
+
+function _ReadActorTargetedConstraint(reader, component)
+{
+	_ReadActorConstraint(reader, component);
+
+	component._TargetIdx = reader.readUint16();
+}
+
+function _ReadActorIKConstraint(reader, component)
+{
+	_ReadActorTargetedConstraint(reader, component);
+
+	component._InvertDirection = reader.readUint8() === 1;
+
+	let numInfluencedBones = reader.readUint8();
+	if(numInfluencedBones > 0)
+	{
+		component._InfluencedBones = [];
+
+		for(let i = 0; i < numInfluencedBones; i++)
+		{
+			component._InfluencedBones.push(reader.readUint16());
+		}
+	}
 	return component;
 }
 

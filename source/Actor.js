@@ -24,7 +24,7 @@ export default class Actor extends Dispatcher
 		this._IsInstance = false;
 		this._IsImageSortDirty = false;
 
-		this._DependencyOrder = null;
+		this._Dependents = null;
 		this._IsDirty = false;
 		this._DirtDepth = 0;
 	}
@@ -149,25 +149,25 @@ export default class Actor extends Dispatcher
 		return true;
 	}
 
-	subUpdate(upTo)
-	{
-		if(!this._IsDirty)
-		{
-			return false;
-		}
-		let order = this._Order;
-		for(let i = 0; i <= upTo._GraphOrder; i++)
-		{
-			let component = order[i];
-			let d = component._DirtMask;
-			if(component._DirtMask === 0)
-			{
-				continue;
-			}
-			component._DirtMask = 0;
-			component.update(d);
-		}
-	}
+	// subUpdate(upTo)
+	// {
+	// 	if(!this._IsDirty)
+	// 	{
+	// 		return false;
+	// 	}
+	// 	let order = this._Order;
+	// 	for(let i = 0; i <= upTo._GraphOrder; i++)
+	// 	{
+	// 		let component = order[i];
+	// 		let d = component._DirtMask;
+	// 		if(component._DirtMask === 0)
+	// 		{
+	// 			continue;
+	// 		}
+	// 		component._DirtMask = 0;
+	// 		component.update(d);
+	// 	}
+	// }
 
 	update()
 	{

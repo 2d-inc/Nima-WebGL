@@ -261,11 +261,7 @@ export default class ActorNode extends ActorComponent
 			{
 				for(let constraint of constraints)
 				{
-					if(constraint.constrain(this))
-					{
-						// Constraint updated hierarchy, make sure we re-update those transforms.
-						this._Actor.subUpdate(this);
-					}
+					constraint.constrain(this);
 				}
 			}
 		}
@@ -343,6 +339,11 @@ export default class ActorNode extends ActorComponent
 		return this._WorldTransform;
 	}
 
+	get transform()
+	{
+		return this._Transform;
+	}
+	
 	get worldTransform()
 	{
 		return this._WorldTransform;

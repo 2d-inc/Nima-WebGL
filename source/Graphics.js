@@ -446,6 +446,7 @@ export default class Graphics
 			}
 			let _RegularShader = _InitializeShader(
 			{
+				name: name || "Textured",
 				vertex: "Regular.vs",
 				fragment: name || "Textured.fs",
 
@@ -468,6 +469,7 @@ export default class Graphics
 
 			let _DeformingShader = _InitializeShader(
 			{
+				name: name || "Deforming",
 				vertex: "Deforming.vs",
 				fragment: name || "Textured.fs",
 
