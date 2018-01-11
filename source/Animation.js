@@ -234,7 +234,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.IKStrength:
+					case AnimatedProperty.Properties.ConstraintStrength:
 						if(mix === 1.0)
 						{
 							component.strength = value;

@@ -43,7 +43,7 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 				}
 				if(ib.constructor === ActorBone)
 				{
-					this._InfluencedBones.push(ib._Index);
+					this._InfluencedBones.push(ib._Idx);
 				}
 				else
 				{
@@ -68,11 +68,19 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 			let componentIndex = bones[j];
 			if(componentIndex.constructor !== Number)
 			{
-				componentIndex = componentIndex._Index;
+				componentIndex = componentIndex._Idx;
 			}
-			
 			let bone = components[componentIndex];
 			bones[j] = bone;
+		}
+	}
+
+	completeResolve()
+	{
+		let bones = this._InfluencedBones;
+		if(!bones || !bones.length)
+		{
+			return;
 		}
 
 		// Initialize solver.
@@ -82,19 +90,19 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 
 		if(bones.length > 1)
 		{
-			while(b1c && b1c.parent != b1)
+			while(b1c && b1c._Parent !== b1)
 			{
-				b1c = b1c.parent;
+				b1c = b1c._Parent;
 			}
 		}
 		
 		let end = tip;
 		let chain = this._FKChain = [];
 		let boneData = this._BoneData = [];
-		while(end && end != b1.parent)
+		while(end && end !== b1._Parent)
 		{
 			chain.unshift({bone:end, ikAngle:0, transformComponents:new Float32Array(6), in:false});
-			end = end.parent;
+			end = end._Parent;
 		}
 
 		let allIn = chain.length < 3;
@@ -150,7 +158,7 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 					continue;
 				}
 				let bone = fk.bone;
-				let children = bone.children;
+				let children = bone._Children;
 				for(let child of children)
 				{
 					if(!(child instanceof ActorNode))

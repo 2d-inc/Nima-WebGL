@@ -86,7 +86,7 @@ function _ReadNextBlock(reader, error)
 		let length = reader.readUint32();
 
 		uint8 = new Uint8Array(length);
-		console.log("TYPE", blockType, "LENGTH", length);
+		//console.log("TYPE", blockType, "LENGTH", length);
 		reader.readRaw(uint8, length);
 	}
 	catch(err)
@@ -189,7 +189,7 @@ function _ReadComponentsBlock(actor, reader)
 		}
 		if(component)
 		{
-			component._Index = actorComponents.length;
+			component._Idx = actorComponents.length;
 		}
 		actorComponents.push(component);
 	}

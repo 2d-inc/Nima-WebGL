@@ -19,7 +19,7 @@ AnimatedProperty.Properties =
 	DrawOrder:7,
 	Length:8,
 	VertexDeform:9,
-	IKStrength:10,
+	ConstraintStrength:10,
 	Trigger:11,
 	IntProperty:12,
 	FloatProperty:13,
