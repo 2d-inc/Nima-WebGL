@@ -22,21 +22,16 @@ export default class ActorIKTarget extends ActorNode
 		let constraint = new ActorIKConstraint();
 		this._Constraint = constraint;
 
+
 		let bones = this._InfluencedBones;
 		constraint._Actor = this._Actor;
 		constraint._TargetIdx = this._Idx;
-		constraint._ParentIdx = this._ParentIdx;
+		constraint._ParentIdx = bones[bones.length-1];
 		constraint._InvertDirection = this._InvertDirection;
 		constraint._InfluencedBones = bones;
 		constraint._Strength = this._Strength;
 		constraint._IsEnabled = true;
 		constraint.resolveComponentIndices(components);
-
-		if(bones.length)
-		{
-			let last = bones[bones.length-1];
-			last.addConstraint(constraint);
-		}
 	}
 
 	completeResolve()
