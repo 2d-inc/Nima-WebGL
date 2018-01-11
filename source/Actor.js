@@ -20,11 +20,10 @@ export default class Actor extends Dispatcher
 		this._Components.push(this._RootNode);
 		this._Nodes.push(this._RootNode);
 		this._Animations = [];
-		this._Solvers = [];
 		this._IsInstance = false;
 		this._IsImageSortDirty = false;
 
-		this._Dependents = null;
+		this._Order = null;
 		this._IsDirty = false;
 		this._DirtDepth = 0;
 	}
@@ -232,9 +231,6 @@ export default class Actor extends Dispatcher
 					case ActorImage:
 						this._Drawables.push(component);
 						break;
-					case ActorIKTarget:
-						this._Solvers.push(component);
-						break;
 				}
 			}
 		}
@@ -252,11 +248,6 @@ export default class Actor extends Dispatcher
 		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
-		});
-
-		this._Solvers.sort(function(a,b)
-		{
-			return a._Order - b._Order;
 		});
 	}
 
@@ -495,10 +486,6 @@ export default class Actor extends Dispatcher
 				case ActorImage:
 					this._Drawables.push(instanceNode);
 					break;
-
-				case ActorIKTarget:
-					this._Solvers.push(instanceNode);
-					break;
 			}
 			if(instanceNode.isNode)
 			{
@@ -533,11 +520,6 @@ export default class Actor extends Dispatcher
 		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
-		});
-
-		this._Solvers.sort(function(a,b)
-		{
-			return a._Order - b._Order;
 		});
 	}
 }
