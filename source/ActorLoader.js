@@ -23,6 +23,9 @@ import NestedActorAsset from "./NestedActorAsset.js";
 import ActorIKConstraint from "./ActorIKConstraint.js";
 import ActorDistanceConstraint from "./ActorDistanceConstraint.js";
 import ActorTransformConstraint from "./ActorTransformConstraint.js";
+import ActorTranslationConstraint from "./ActorTranslationConstraint.js";
+import ActorScaleConstraint from "./ActorScaleConstraint.js";
+import ActorRotationConstraint from "./ActorRotationConstraint.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
 
@@ -173,6 +176,15 @@ function _ReadComponentsBlock(actor, reader)
 				break;
 			case _BlockTypes.ActorTransformConstraint:
 				component = _ReadActorTransformConstraint(block.reader, new ActorTransformConstraint());
+				break;
+			case _BlockTypes.ActorTranslationConstraint:
+				component = _ReadAxisConstraint(block.reader, new ActorTranslationConstraint());
+				break;
+			case _BlockTypes.ActorScaleConstraint:
+				component = _ReadAxisConstraint(block.reader, new ActorScaleConstraint());
+				break;
+			case _BlockTypes.ActorRotationConstraint:
+				component = _ReadRotationConstraint(block.reader, new ActorRotationConstraint());
 				break;
 		}
 		if(component)
@@ -904,6 +916,70 @@ function _ReadActorTransformConstraint(reader, component)
 
 	component._SourceSpace = reader.readUint8();
 	component._DestSpace = reader.readUint8();
+
+	return component;
+}
+
+function _ReadRotationConstraint(reader, component)
+{
+	_ReadActorTargetedConstraint(reader, component);
+
+	if((component._Copy = reader.readUint8() === 1))
+	{
+		component._Scale = reader.readFloat32();
+	}
+	if((component._EnableMin = reader.readUint8() === 1))
+	{
+		component._Min = reader.readFloat32();
+	}
+	if((component._EnableMax = reader.readUint8() === 1))
+	{
+		component._Max = reader.readFloat32();
+	}
+	
+	component._Offset = reader.readUint8() === 1;
+	component._SourceSpace = reader.readUint8();
+	component._DestSpace = reader.readUint8();
+	component._MinMaxSpace = reader.readUint8();
+
+	return component;
+}
+
+function _ReadAxisConstraint(reader, component)
+{
+	_ReadActorTargetedConstraint(reader, component);
+	// X Axis
+	if((component._CopyX = reader.readUint8() === 1))
+	{
+		component._ScaleX = reader.readFloat32();
+	}
+	if((component._EnableMinX = reader.readUint8() === 1))
+	{
+		component._MinX = reader.readFloat32();
+	}
+	if((component._EnableMaxX = reader.readUint8() === 1))
+	{
+		component._MaxX = reader.readFloat32();
+	}
+
+	// Y Axis
+	if((component._CopyY = reader.readUint8() === 1))
+	{
+		component._ScaleY = reader.readFloat32();
+	}
+	if((component._EnableMinY = reader.readUint8() === 1))
+	{
+		component._MinY = reader.readFloat32();
+	}
+	if((component._EnableMaxY = reader.readUint8() === 1))
+	{
+		component._MaxY = reader.readFloat32();
+	}
+
+	component._Offset = reader.readUint8() === 1;
+	component._SourceSpace = reader.readUint8();
+	component._DestSpace = reader.readUint8();
+	component._MinMaxSpace = reader.readUint8();
 
 	return component;
 }

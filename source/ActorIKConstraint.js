@@ -26,11 +26,6 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 		return node;	
 	}
 
-	onDirty(dirt)
-	{
-		this.markDirty();
-	}
-
 	copy(node, resetActor)
 	{
 		super.copy(node, resetActor);

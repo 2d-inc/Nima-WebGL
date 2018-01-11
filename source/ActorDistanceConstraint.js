@@ -1,8 +1,5 @@
 import ActorTargetedConstraint from "./ActorTargetedConstraint.js";
-import {vec2,mat2d} from "gl-matrix";
-import ActorNode from "./ActorNode.js";
-import ActorBone from "./ActorNode.js";
-import { Decompose } from "./Decompose.js";
+import { vec2 } from "gl-matrix";
 
 const DistanceMode =
 {
@@ -27,12 +24,6 @@ export default class ActorDistanceConstraint extends ActorTargetedConstraint
 		node.copy(this, resetActor);
 		return node;	
 	}
-
-	onDirty(dirt)
-	{
-		this.markDirty();
-	}
-
 
 	get distance()
 	{

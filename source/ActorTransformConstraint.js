@@ -33,11 +33,6 @@ export default class ActorTransformConstraint extends ActorTargetedConstraint
 		this._DestSpace = node._DestSpace;
 	}
 
-	onDirty(dirt)
-	{
-		this.markDirty();
-	}
-
 	constrain(tip)
 	{
 		let target = this._Target;

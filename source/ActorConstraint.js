@@ -24,6 +24,11 @@ export default class ActorConstraint extends ActorComponent
 		this._Strength = node._Strength;
 	}
 
+	onDirty(dirt)
+	{
+		this.markDirty();
+	}
+	
 	markDirty()
 	{
 		this.parent.markTransformDirty();

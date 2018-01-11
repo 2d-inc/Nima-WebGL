@@ -261,7 +261,10 @@ export default class ActorNode extends ActorComponent
 			{
 				for(let constraint of constraints)
 				{
-					constraint.constrain(this);
+					if(constraint.isEnabled)
+					{
+						constraint.constrain(this);
+					}
 				}
 			}
 		}
@@ -343,7 +346,7 @@ export default class ActorNode extends ActorComponent
 	{
 		return this._Transform;
 	}
-	
+
 	get worldTransform()
 	{
 		return this._WorldTransform;
