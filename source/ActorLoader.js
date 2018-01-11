@@ -272,7 +272,7 @@ function _ReadAnimationBlock(actor, reader)
 						case AnimatedProperty.Properties.DrawOrder:
 						case AnimatedProperty.Properties.Length:
 						case AnimatedProperty.Properties.VertexDeform:
-						case AnimatedProperty.Properties.IKStrength:
+						case AnimatedProperty.Properties.ConstraintStrength:
 						case AnimatedProperty.Properties.Trigger:
 						case AnimatedProperty.Properties.IntProperty:
 						case AnimatedProperty.Properties.FloatProperty:

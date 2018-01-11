@@ -34,7 +34,7 @@ export default class ActorTargetedConstraint extends ActorConstraint
 			{
 				this._Target = target;
 				// Add dependency on target.
-				this._Actor.addDependency(this, target);
+				this._Actor.addDependency(this._Parent, target);
 			}
 		}
 

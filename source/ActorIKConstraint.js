@@ -144,7 +144,11 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 			{
 				continue;
 			}
-			actor.addDependency(bone, this);
+			actor.addDependency(this, bone);
+		}
+		if(this._Target)
+		{
+			actor.addDependency(this, this._Target);
 		}
 
 		// N.B. Dependency on target already set in ActorTargetedConstrain.
