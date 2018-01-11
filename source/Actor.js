@@ -98,18 +98,6 @@ export default class Actor extends Dispatcher
 		this._IsDirty = true;
 	}
 
-	addDirtToDependents(component, value)
-	{
-		let dependents = component._Dependents;
-		if(dependents)
-		{
-			for(let d of dependents)
-			{
-				this.addDirt(d, value, true);
-			}
-		}
-	}
-
 	addDirt(component, value, recurse)
 	{
 		if((component._DirtMask & value) === value)
@@ -147,26 +135,6 @@ export default class Actor extends Dispatcher
 
 		return true;
 	}
-
-	// subUpdate(upTo)
-	// {
-	// 	if(!this._IsDirty)
-	// 	{
-	// 		return false;
-	// 	}
-	// 	let order = this._Order;
-	// 	for(let i = 0; i <= upTo._GraphOrder; i++)
-	// 	{
-	// 		let component = order[i];
-	// 		let d = component._DirtMask;
-	// 		if(component._DirtMask === 0)
-	// 		{
-	// 			continue;
-	// 		}
-	// 		component._DirtMask = 0;
-	// 		component.update(d);
-	// 	}
-	// }
 
 	update()
 	{
