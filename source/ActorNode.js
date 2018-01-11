@@ -92,6 +92,10 @@ export default class ActorNode extends ActorComponent
 				mat2d.mul(this._WorldTransform, parent._WorldTransform, this._Transform);
 			}
 		}
+		else
+		{
+			mat2d.copy(this._WorldTransform, this._Transform);
+		}
 	}
 	
 	get isNode()
