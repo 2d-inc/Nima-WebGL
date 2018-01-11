@@ -1,4 +1,5 @@
 import ActorComponent from "./ActorComponent.js";
+import ActorConstraint from "./ActorConstraint.js";
 import {vec2, mat2d} from "gl-matrix";
 
 

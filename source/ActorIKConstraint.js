@@ -77,6 +77,8 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 
 	completeResolve()
 	{
+		super.completeResolve();
+		
 		let bones = this._InfluencedBones;
 		if(!bones || !bones.length)
 		{

@@ -50,6 +50,7 @@ export default class ActorNodeSolo extends ActorNode
 
 	completeResolve()
 	{
+		super.completeResolve();
 		// Hierarchy is resolved.
 		this.setActiveChildIndex(this._ActiveChildIndex);
 	}

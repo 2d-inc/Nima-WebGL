@@ -140,6 +140,8 @@ export default class JellyComponent extends ActorComponent
 
 	completeResolve()
 	{
+		super.completeResolve();
+		
 		let bone = this._Parent;
 		bone._Jelly = this;
 

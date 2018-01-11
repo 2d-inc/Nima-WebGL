@@ -28,7 +28,7 @@ export default class ActorConstraint extends ActorComponent
 	{
 		this.markDirty();
 	}
-	
+
 	markDirty()
 	{
 		this.parent.markTransformDirty();
@@ -62,9 +62,10 @@ export default class ActorConstraint extends ActorComponent
 	resolveComponentIndices(components)
 	{
 		super.resolveComponentIndices(components);
-		if(this.parent)
+		if(this._Parent)
 		{
-			this.parent.addConstraint(this);
+			// This works because nodes are exported in hierarchy order, so we are assured constraints get added in order as we resolve indices.
+			this._Parent.addConstraint(this);
 		}
 	}
 }

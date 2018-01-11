@@ -18,6 +18,8 @@ export default class ActorBone extends ActorBoneBase
 
 	completeResolve()
 	{
+		super.completeResolve();
+		
 		let children = this._Children;
 		for(let child of children)
 		{

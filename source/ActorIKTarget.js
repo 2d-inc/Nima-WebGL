@@ -41,6 +41,8 @@ export default class ActorIKTarget extends ActorNode
 
 	completeResolve()
 	{
+		super.completeResolve();
+		
 		this._Constraint.completeResolve();
 	}
 
