@@ -363,6 +363,11 @@ export default class Graphics
 					let name = s.uniforms[u];
 					if ((s.uniforms[u] = _GL.getUniformLocation(s.program, name)) === null)
 					{
+						if(name === "SecondTextureSampler")
+						{
+							// Don't warn of an optional sampler (might want to make this more robust in the future).
+							continue;
+						}
 						console.warn("Could not find uniform", name, "for shader", s.name);
 					}
 				}
