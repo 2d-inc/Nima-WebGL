@@ -1,6 +1,5 @@
 import ActorNode from "./ActorNode.js";
 import ActorBone from "./ActorBone.js";
-import {vec2, mat2d} from "gl-matrix";
 import ActorIKConstraint from "./ActorIKConstraint.js";
 
 export default class ActorIKTarget extends ActorNode

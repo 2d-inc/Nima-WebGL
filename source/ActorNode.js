@@ -1,15 +1,13 @@
 import ActorComponent from "./ActorComponent.js";
-import ActorConstraint from "./ActorConstraint.js";
 import {vec2, mat2d} from "gl-matrix";
 
 
 let TransformDirty = 1<<0;
 let WorldTransformDirty = 1<<1;
-let ConstraintsDirty = 1<<2;
 
 function _UpdateTransform(node)
 {
-	let r = node._OverrideRotation !== null ? node._OverrideRotation : node._Rotation;
+	let r = node._Rotation;
 	let t = node._Translation;
 
 	//t[0] += 0.01;
@@ -35,7 +33,6 @@ export default class ActorNode extends ActorComponent
 		this._Transform = mat2d.create();
 		this._WorldTransform = mat2d.create();
 		this._OverrideWorldTransform = false;
-		this._OverrideRotation = null;
 		this._Constraints = null;
 
 		this._Translation = vec2.create();
@@ -65,15 +62,7 @@ export default class ActorNode extends ActorComponent
 		return true;
 	}
 
-	onDirty(dirt)
-	{
-		if((dirt & ConstraintsDirty) === ConstraintsDirty)
-		{
-			this.overrideRotation(null);
-		}
-	}
-
-	markTransformDirty(skipConstraints)
+	markTransformDirty()
 	{
 		let actor = this._Actor;
 		if(!actor)
@@ -85,16 +74,7 @@ export default class ActorNode extends ActorComponent
 		{
 			return;
 		}
-		actor.addDirt(this, skipConstraints ? WorldTransformDirty : WorldTransformDirty|ConstraintsDirty, true);
-	}
-
-	markConstraintsDirty()
-	{
-		let actor = this._Actor;
-		if(actor)
-		{
-			actor.addDirtToDependents(this, ConstraintsDirty);
-		}
+		actor.addDirt(this, WorldTransformDirty, true);
 	}
 
 	updateWorldTransform()
@@ -204,15 +184,6 @@ export default class ActorNode extends ActorComponent
 		return this._Rotation;
 	}
 
-	get actualRotation()
-	{
-		if(this._OverrideRotation)
-		{
-			return this._OverrideRotation;
-		}
-		return this._Rotation;
-	}
-
 	set rotation(value)
 	{
 		if(this._Rotation != value)
@@ -236,15 +207,6 @@ export default class ActorNode extends ActorComponent
 		}
 	}
 
-	overrideRotation(r)
-	{
-		if(this._OverrideRotation !== r)
-		{
-			this._OverrideRotation = r;
-			this.markTransformDirty(r !== null);
-		}
-	}
-
 	update(dirt)
 	{
 		if((dirt & TransformDirty) === TransformDirty)
@@ -254,9 +216,6 @@ export default class ActorNode extends ActorComponent
 		if((dirt & WorldTransformDirty) === WorldTransformDirty)
 		{
 			this.updateWorldTransform();
-		}
-		if((dirt & ConstraintsDirty) === ConstraintsDirty)
-		{
 			let constraints = this._Constraints;
 			if(constraints)
 			{
@@ -270,47 +229,6 @@ export default class ActorNode extends ActorComponent
 			}
 		}
 	}
-	// updateTransforms()
-	// {
-	// 	if(this._IsDirty)
-	// 	{
-	// 		_UpdateTransform(this);
-	// 	}
-	// 	if(this._IsWorldDirty)
-	// 	{
-	// 		this.updateWorldTransform();
-	// 	}
-	// }
-
-	// getTransform()
-	// {
-	// 	if(this._IsDirty)
-	// 	{
-	// 		_UpdateTransform(this);
-	// 	}
-	// 	return this._Transform;
-	// }
-
-	// markWorldDirty()
-	// {
-	// 	if(this._IsWorldDirty || this._SuppressMarkDirty)
-	// 	{
-	// 		return;
-	// 	}
-	// 	let children = this._Children;
-	// 	for(let child of children)
-	// 	{
-	// 		child.markWorldDirty();
-	// 	}
-
-	// 	let dependents = this._Dependents;
-	// 	for(let dependent of dependents)
-	// 	{
-	// 		dependent.markWorldDirty();
-	// 	}
-
-	// 	this._IsWorldDirty = true;
-	// }
 
 	getWorldTransform()
 	{
@@ -389,7 +307,6 @@ export default class ActorNode extends ActorComponent
 		this._Opacity = node._Opacity;
 		this._RenderOpacity = node._RenderOpacity;
 		this._OverrideWorldTransform = node._OverrideWorldTransform;
-		this._OverrideRotation = node._OverrideRotation;
 	}
 
 	overrideWorldTransform(transform)
