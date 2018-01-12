@@ -75,6 +75,14 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 		}
 	}
 
+	markDirty()
+	{
+		for(let item of this._FKChain)
+		{
+			item.bone.markTransformDirty();
+		}
+	}
+
 	completeResolve()
 	{
 		super.completeResolve();
@@ -86,22 +94,11 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 		}
 
 		// Initialize solver.
-		let tip = bones[bones.length-1];
-		let b1 = bones[0];
-		let b1c = tip;
-
-		if(bones.length > 1)
-		{
-			while(b1c && b1c._Parent !== b1)
-			{
-				b1c = b1c._Parent;
-			}
-		}
-		
-		let end = tip;
+		let start = bones[0];
+		let end = bones[bones.length-1];
 		let chain = this._FKChain = [];
 		let boneData = this._BoneData = [];
-		while(end && end !== b1._Parent)
+		while(end && end !== start._Parent)
 		{
 			chain.unshift({bone:end, ikAngle:0, transformComponents:new Float32Array(6), in:false});
 			end = end._Parent;
