@@ -247,16 +247,9 @@ export default class JellyComponent extends ActorComponent
 			console.warn("Failed to invert transform space", bone.worldTransform);
 			return;
 		}
-
-		// Conditions for in position & direction
-		// A: comes from in target.
-		// B: comes from parent bone's out target.
-		// C: comes from parent bone's alignment relative to our bone.
-		// D: comes from our direction.
 		
 		if(this._InTarget)
 		{
-			// A.
 			let translation = this._InTarget.worldTranslation;
 			vec2.transformMat2d(this._InPoint, translation, inverseWorld);
 			vec2.normalize(this._InDirection, this._InPoint);
@@ -265,18 +258,13 @@ export default class JellyComponent extends ActorComponent
 		{
 			if(parentBone._FirstBone === bone && parentBoneJelly && parentBoneJelly._OutTarget)
 			{
-				// B.
-				// Parent has an out target, we don't have an in target, so set our in to match the parent's out direction.
-
 				let translation = parentBoneJelly._OutTarget.worldTranslation;
 				let localParentOut = vec2.transformMat2d(vec2.create(), translation, inverseWorld);
 				vec2.normalize(localParentOut, localParentOut);
-				let inDir = vec2.negate(this._InDirection, localParentOut);
-				vec2.scale(this._InPoint, inDir, this._EaseIn*bone._Length*CurveConstant);
+				
 			}
 			else
 			{
-				// C.
 				let d1 = vec2.set(vec2.create(), 1, 0);
 				let d2 = vec2.set(vec2.create(), 1, 0);
 
@@ -286,24 +274,16 @@ export default class JellyComponent extends ActorComponent
 				let sum = vec2.add(vec2.create(), d1, d2);
 				let localIn = vec2.transformMat2(this._InDirection, sum, inverseWorld);
 				vec2.normalize(localIn, localIn);
-				vec2.scale(this._InPoint, localIn, this._EaseIn*bone._Length*CurveConstant);
 			}
+			vec2.scale(this._InPoint, this._InDirection, this._EaseIn*bone._Length*CurveConstant);
 		}
 		else
-		{
-			// D.
-			vec2.set(this._InDirection, 1, 0);
+		{			vec2.set(this._InDirection, 1, 0);
 			vec2.set(this._InPoint, this._EaseIn*bone._Length*CurveConstant, 0);
 		}
 
-		// Conditions for out position & direction
-		// A: comes from out target.
-		// B: comes from child bone's in target.
-		// C: comes from child bone's alignment relative to our bone.
-		// D: comes from our direction.
 		if(this._OutTarget)
 		{
-			// A.
 			let translation = this._OutTarget.worldTranslation;
 			vec2.transformMat2d(this._OutPoint, translation, inverseWorld);
 			let tip = vec2.set(vec2.create(), bone._Length, 0.0);
@@ -316,13 +296,10 @@ export default class JellyComponent extends ActorComponent
 			let firstBoneJelly = firstBone.jelly;
 			if(firstBoneJelly && firstBoneJelly._InTarget)
 			{
-				// B.
-				// Child has an in target, we don't have an out target, so set our out to match the parent's in direction.
 				let translation = firstBoneJelly._InTarget.worldTranslation;
 				let worldChildInDir = vec2.subtract(vec2.create(), firstBone.worldTranslation, translation);
 				let outDir = vec2.transformMat2(this._OutDirection, worldChildInDir, inverseWorld);
 				vec2.normalize(outDir, outDir);
-				//let outDir = vec2.negate(this._OutDirection, localChildInDir);
 
 				let scaledOut = vec2.scale(vec2.create(), outDir, this._EaseOut*bone._Length*CurveConstant);
 
@@ -331,7 +308,6 @@ export default class JellyComponent extends ActorComponent
 			}
 			else
 			{
-				// C.
 				let d1 = vec2.set(vec2.create(), 1, 0);
 				let d2 = vec2.set(vec2.create(), 1, 0);
 
@@ -350,7 +326,6 @@ export default class JellyComponent extends ActorComponent
 		}
 		else
 		{
-			// D.
 			vec2.set(this._OutDirection, -1, 0);
 
 			let scaledOut = vec2.scale(vec2.create(), this._OutDirection, this._EaseOut*bone._Length*CurveConstant);
