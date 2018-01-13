@@ -173,14 +173,13 @@ export default class JellyComponent extends ActorComponent
 			return;
 		}
 
-		if(jc && jc.count === jellies.length && FuzzyEquals(jc.tip, tipPosition) && FuzzyEquals(jc.out, this._OutPoint) && FuzzyEquals(jc.in, this._InPoint) && jc.sin === this._ScaleIn && jc.sout === this._ScaleOut)
+		if(jc && FuzzyEquals(jc.tip, tipPosition) && FuzzyEquals(jc.out, this._OutPoint) && FuzzyEquals(jc.in, this._InPoint) && jc.sin === this._ScaleIn && jc.sout === this._ScaleOut)
 		{
 			return;
 		}
 
 		this._Cache =
 		{
-			count:jellies.length,
 			tip:tipPosition,
 			out:vec2.clone(this._OutPoint),
 			in:vec2.clone(this._InPoint),
@@ -252,13 +251,14 @@ export default class JellyComponent extends ActorComponent
 	updateInPoint()
 	{
 		let bone = this._Parent;
-		let parentBone = bone._Parent;
-		let parentBoneJelly = parentBone && parentBone._Jelly;
-
 		if(!bone)
 		{
 			return;
 		}
+
+		let parentBone = bone._Parent;
+		let parentBoneJelly = parentBone && parentBone._Jelly;
+
 		let length = this._EaseIn*bone._Length*CurveConstant;
 		if(this._InTarget)
 		{
@@ -272,7 +272,7 @@ export default class JellyComponent extends ActorComponent
 			vec2.transformMat2d(this._InPoint, translation, inverseWorld);
 			vec2.normalize(this._InDirection, this._InPoint);
 
-			if(parentBone && parentBone._FirstBone === bone)
+			if(parentBoneJelly && parentBone._FirstBone === bone)
 			{
 				if(parentBoneJelly.outTarget)
 				{
@@ -328,9 +328,7 @@ export default class JellyComponent extends ActorComponent
 				vec2.negate(localIn, localIn);
 
 				let inDir = vec2.normalize(this._InDirection, localIn);
-				inDir = vec2.scale(vec2.create(), inDir, length);
-
-				vec2.add(this._InPoint, vec2.create(), inDir);
+				vec2.scale(this._InPoint, inDir, length);
 
 				parentBoneJelly.updateJellies();
 			}

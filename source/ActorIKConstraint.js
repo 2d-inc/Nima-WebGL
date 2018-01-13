@@ -137,6 +137,7 @@ export default class ActorIKConstraint extends ActorTargetedConstraint
 		let actor = this._Actor;
 		for(let bone of bones)
 		{
+			// Don't mark dependency on parent as ActorComponent already does this.
 			if(bone === this.parent)
 			{
 				continue;
