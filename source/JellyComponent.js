@@ -1,5 +1,6 @@
 import ActorComponent from "./ActorComponent.js";
 import ActorJellyBone from "./ActorJellyBone.js";
+import ActorBoneBase from "./ActorBoneBase.js";
 import { mat2d, vec2 } from "gl-matrix";
 
 // https://stackoverflow.com/questions/1734745/how-to-create-circle-with-b%C3%A9zier-curves
@@ -234,173 +235,129 @@ export default class JellyComponent extends ActorComponent
 		return vec2.set(vec2.create(), bone._Length, 0.0);
 	}
 
-	setOutDirection(dir)
-	{
-		let bone = this._Parent;
-		let length = this._EaseOut*bone._Length*CurveConstant;
-
-		let outDir = vec2.normalize(this._OutDirection, dir);
-		outDir = vec2.scale(vec2.create(), outDir, length);
-		let tipPosition = this.tipPosition;
-
-		vec2.add(this._OutPoint, tipPosition, outDir);
-
-		this.updateJellies();
-	}
-
-	updateInPoint()
-	{
-		let bone = this._Parent;
-		if(!bone)
-		{
-			return;
-		}
-
-		let parentBone = bone._Parent;
-		let parentBoneJelly = parentBone && parentBone._Jelly;
-
-		let length = this._EaseIn*bone._Length*CurveConstant;
-		if(this._InTarget)
-		{
-			let translation = this._InTarget.worldTranslation;
-			let inverseWorld = mat2d.invert(mat2d.create(), bone._WorldTransform);
-			if(!inverseWorld)
-			{
-				console.warn("Failed to invert transform space", bone._WorldTransform);
-				return;
-			}
-			vec2.transformMat2d(this._InPoint, translation, inverseWorld);
-			vec2.normalize(this._InDirection, this._InPoint);
-
-			if(parentBoneJelly && parentBone._FirstBone === bone)
-			{
-				if(parentBoneJelly.outTarget)
-				{
-					let translation = parentBoneJelly.outTarget.worldTranslation;
-					let parentInverseWorld = mat2d.invert(mat2d.create(), parentBone._WorldTransform);
-					if(!parentInverseWorld)
-					{
-						console.warn("Failed to invert transform space", parentBone._WorldTransform);
-						return;
-					}
-					vec2.transformMat2d(parentBoneJelly._OutPoint, translation, parentInverseWorld);
-					vec2.normalize(parentBoneJelly._OutDirection, parentBoneJelly._OutPoint);
-					parentBoneJelly.updateJellies();
-				}
-				else
-				{
-					let parentInverseWorld = mat2d.invert(mat2d.create(), parentBone._WorldTransform);
-					if(!parentInverseWorld)
-					{
-						console.warn("Failed to invert transform space", parentBone._WorldTransform);
-						return;
-					}
-					let worldOut = vec2.transformMat2(vec2.create(), this._InDirection, bone._WorldTransform);
-					let localOut = vec2.transformMat2(vec2.create(), worldOut, parentInverseWorld);
-					parentBoneJelly.setOutDirection(vec2.negate(localOut, localOut));
-				}
-			}
-		}
-		else if(parentBone && parentBone._FirstBone === bone)
-		{
-			if(parentBoneJelly.outTarget)
-			{
-				// Parent has an out target, we don't have an in target, so set our in to match the parent's out direction.
-
-				let translation = parentBoneJelly.outTarget.worldTranslation;
-				let parentInverseWorld = mat2d.invert(mat2d.create(), parentBone._WorldTransform);
-				if(!parentInverseWorld)
-				{
-					console.warn("Failed to invert transform space", parentBone._WorldTransform);
-					return;
-				}
-				vec2.transformMat2d(parentBoneJelly._OutPoint, translation, parentInverseWorld);
-				vec2.normalize(parentBoneJelly._OutDirection, vec2.subtract(vec2.create(), parentBoneJelly._OutPoint, parentBoneJelly.tipPosition));
-
-				let inverseWorld = mat2d.invert(mat2d.create(), bone._WorldTransform);
-				if(!inverseWorld)
-				{
-					console.warn("Failed to invert transform space", bone._WorldTransform);
-					return;
-				}
-				let worldOut = vec2.transformMat2(vec2.create(), parentBoneJelly._OutDirection, parentBone._WorldTransform);
-				let localIn = vec2.transformMat2(vec2.create(), worldOut, inverseWorld);
-				vec2.negate(localIn, localIn);
-
-				let inDir = vec2.normalize(this._InDirection, localIn);
-				vec2.scale(this._InPoint, inDir, length);
-
-				parentBoneJelly.updateJellies();
-			}
-			else
-			{
-				//let parentTranslation = parent.worldTranslation;
-				let inverseWorld = mat2d.invert(mat2d.create(), bone._WorldTransform);
-				if(!inverseWorld)
-				{
-					console.warn("Failed to invert transform space", bone._WorldTransform);
-					return;
-				}
-				let parentInverseWorld = mat2d.invert(mat2d.create(), parentBone._WorldTransform);
-				if(!parentInverseWorld)
-				{
-					console.warn("Failed to invert transform space", parentBone._WorldTransform);
-					return;
-				}
-
-				let d1 = vec2.set(vec2.create(), 1, 0);
-				let d2 = vec2.set(vec2.create(), 1, 0);
-
-				vec2.transformMat2(d1, d1, parentBone._WorldTransform);
-				vec2.transformMat2(d2, d2, bone._WorldTransform);
-
-				let sum = vec2.add(vec2.create(), d1, d2);
-				vec2.normalize(sum, sum);
-
-				let localIn = vec2.transformMat2(this._InDirection, sum, inverseWorld);
-				vec2.scale(this._InPoint, localIn, length);
-
-				let localOut = vec2.transformMat2(vec2.create(), sum, parentInverseWorld);
-
-				parentBoneJelly.setOutDirection(vec2.negate(localOut, localOut));
-			}
-		}
-		else
-		{
-			vec2.set(this._InDirection, 1, 0);
-			vec2.set(this._InPoint, length, 0);
-		}
-
-		if(!bone._FirstBone)
-		{
-			if(this._OutTarget)
-			{
-				// No child bone but we have an out target
-				let translation = this._OutTarget.worldTranslation;
-				let inverseWorld = mat2d.invert(mat2d.create(), bone._WorldTransform);
-				if(!inverseWorld)
-				{
-					console.warn("Failed to invert transform space", bone._WorldTransform);
-					return;
-				}
-				vec2.transformMat2d(this._OutPoint, translation, inverseWorld);
-				vec2.normalize(this._OutDirection, this._OutPoint);
-				this.updateJellies();
-			}
-			else
-			{
-				this.setOutDirection(vec2.set(vec2.create(), -1, 0));
-			}
-		}
-	}
-
 	update(dirt)
 	{
 		let bone = this._Parent;
 
-		if(bone._Jelly)
+		let parentBone = bone.parent instanceof ActorBoneBase && bone.parent;
+		let parentBoneJelly = parentBone && parentBone.jelly;
+		let inverseWorld = mat2d.invert(mat2d.create(), bone.worldTransform);
+		if(!inverseWorld)
 		{
-			bone._Jelly.updateInPoint();
+			console.warn("Failed to invert transform space", bone.worldTransform);
+			return;
 		}
+
+		// Conditions for in position & direction
+		// A: comes from in target.
+		// B: comes from parent bone's out target.
+		// C: comes from parent bone's alignment relative to our bone.
+		// D: comes from our direction.
+		
+		if(this._InTarget)
+		{
+			// A.
+			let translation = this._InTarget.worldTranslation;
+			vec2.transformMat2d(this._InPoint, translation, inverseWorld);
+			vec2.normalize(this._InDirection, this._InPoint);
+		}
+		else if(parentBone)
+		{
+			if(parentBone._FirstBone === bone && parentBoneJelly && parentBoneJelly._OutTarget)
+			{
+				// B.
+				// Parent has an out target, we don't have an in target, so set our in to match the parent's out direction.
+
+				let translation = parentBoneJelly._OutTarget.worldTranslation;
+				let localParentOut = vec2.transformMat2d(vec2.create(), translation, inverseWorld);
+				vec2.normalize(localParentOut, localParentOut);
+				let inDir = vec2.negate(this._InDirection, localParentOut);
+				vec2.scale(this._InPoint, inDir, this._EaseIn*bone._Length*CurveConstant);
+			}
+			else
+			{
+				// C.
+				let d1 = vec2.set(vec2.create(), 1, 0);
+				let d2 = vec2.set(vec2.create(), 1, 0);
+
+				vec2.transformMat2(d1, d1, parentBone.worldTransform);
+				vec2.transformMat2(d2, d2, bone.worldTransform);
+
+				let sum = vec2.add(vec2.create(), d1, d2);
+				let localIn = vec2.transformMat2(this._InDirection, sum, inverseWorld);
+				vec2.normalize(localIn, localIn);
+				vec2.scale(this._InPoint, localIn, this._EaseIn*bone._Length*CurveConstant);
+			}
+		}
+		else
+		{
+			// D.
+			vec2.set(this._InDirection, 1, 0);
+			vec2.set(this._InPoint, this._EaseIn*bone._Length*CurveConstant, 0);
+		}
+
+		// Conditions for out position & direction
+		// A: comes from out target.
+		// B: comes from child bone's in target.
+		// C: comes from child bone's alignment relative to our bone.
+		// D: comes from our direction.
+		if(this._OutTarget)
+		{
+			// A.
+			let translation = this._OutTarget.worldTranslation;
+			vec2.transformMat2d(this._OutPoint, translation, inverseWorld);
+			let tip = vec2.set(vec2.create(), bone._Length, 0.0);
+			vec2.subtract(this._OutDirection, this._OutPoint, tip);
+			vec2.normalize(this._OutDirection, this._OutDirection);
+		}
+		else if(bone._FirstBone)
+		{
+			let firstBone = bone._FirstBone;
+			let firstBoneJelly = firstBone.jelly;
+			if(firstBoneJelly && firstBoneJelly._InTarget)
+			{
+				// B.
+				// Child has an in target, we don't have an out target, so set our out to match the parent's in direction.
+				let translation = firstBoneJelly._InTarget.worldTranslation;
+				let worldChildInDir = vec2.subtract(vec2.create(), firstBone.worldTranslation, translation);
+				let outDir = vec2.transformMat2(this._OutDirection, worldChildInDir, inverseWorld);
+				vec2.normalize(outDir, outDir);
+				//let outDir = vec2.negate(this._OutDirection, localChildInDir);
+
+				let scaledOut = vec2.scale(vec2.create(), outDir, this._EaseOut*bone._Length*CurveConstant);
+
+				vec2.set(this._OutPoint, bone._Length, 0.0);
+				vec2.add(this._OutPoint, this._OutPoint, scaledOut);
+			}
+			else
+			{
+				// C.
+				let d1 = vec2.set(vec2.create(), 1, 0);
+				let d2 = vec2.set(vec2.create(), 1, 0);
+
+				vec2.transformMat2(d1, d1, firstBone.worldTransform);
+				vec2.transformMat2(d2, d2, bone.worldTransform);
+
+				let sum = vec2.add(vec2.create(), d1, d2);
+				vec2.negate(sum, sum);
+				let localOut = vec2.transformMat2(this._OutDirection, sum, inverseWorld);
+				vec2.normalize(localOut, localOut);
+
+				let scaledOut = vec2.scale(vec2.create(), localOut, this._EaseOut*bone._Length*CurveConstant);
+				vec2.set(this._OutPoint, bone._Length, 0.0);
+				vec2.add(this._OutPoint, this._OutPoint, scaledOut);
+			}
+		}
+		else
+		{
+			// D.
+			vec2.set(this._OutDirection, -1, 0);
+
+			let scaledOut = vec2.scale(vec2.create(), this._OutDirection, this._EaseOut*bone._Length*CurveConstant);
+			vec2.set(this._OutPoint, bone._Length, 0.0);
+			vec2.add(this._OutPoint, this._OutPoint, scaledOut);
+		}
+		
+		this.updateJellies();
 	}
 }
