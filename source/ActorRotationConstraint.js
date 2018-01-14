@@ -1,11 +1,11 @@
-import ActorAxisConstraint from "./ActorAxisConstraint.js";
+import ActorTargetedConstraint from "./ActorTargetedConstraint.js";
 import { vec2, mat2d } from "gl-matrix";
 import { Decompose, Compose } from "./Decompose.js";
 import TransformSpace from "./TransformSpace.js";
 
 const PI2 = Math.PI*2;
 
-export default class ActorRotationConstraint extends ActorAxisConstraint
+export default class ActorRotationConstraint extends ActorTargetedConstraint
 {
 	constructor(actor)
 	{
@@ -27,6 +27,11 @@ export default class ActorRotationConstraint extends ActorAxisConstraint
 		this._ComponentsA = new Float32Array(6);
 		this._ComponentsB = new Float32Array(6);
 
+	}
+
+	onDirty(dirt)
+	{
+		this.markDirty();
 	}
 
 	makeInstance(resetActor)
