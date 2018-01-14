@@ -295,15 +295,11 @@ export default class JellyComponent extends ActorComponent
 		{
 			let firstBone = bone._FirstBone;
 			let firstBoneJelly = firstBone.jelly;
-			let scaledOut;
 			if(firstBoneJelly && firstBoneJelly._InTarget)
 			{
 				let translation = firstBoneJelly._InTarget.worldTranslation;
 				let worldChildInDir = vec2.subtract(vec2.create(), firstBone.worldTranslation, translation);
-				let outDir = vec2.transformMat2(this._OutDirection, worldChildInDir, inverseWorld);
-				vec2.normalize(outDir, outDir);
-
-				scaledOut = vec2.scale(vec2.create(), outDir, this._EaseOut*bone._Length*CurveConstant);
+				vec2.transformMat2(this._OutDirection, worldChildInDir, inverseWorld);
 			}
 			else
 			{
@@ -315,11 +311,10 @@ export default class JellyComponent extends ActorComponent
 
 				let sum = vec2.add(vec2.create(), d1, d2);
 				vec2.negate(sum, sum);
-				let localOut = vec2.transformMat2(this._OutDirection, sum, inverseWorld);
-				vec2.normalize(localOut, localOut);
-
-				scaledOut = vec2.scale(vec2.create(), localOut, this._EaseOut*bone._Length*CurveConstant);
+				vec2.transformMat2(this._OutDirection, sum, inverseWorld);
 			}
+			vec2.normalize(this._OutDirection, this._OutDirection);
+			let scaledOut = vec2.scale(vec2.create(), this._OutDirection, this._EaseOut*bone._Length*CurveConstant);
 			vec2.set(this._OutPoint, bone._Length, 0.0);
 			vec2.add(this._OutPoint, this._OutPoint, scaledOut);
 		}
