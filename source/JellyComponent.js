@@ -261,7 +261,7 @@ export default class JellyComponent extends ActorComponent
 				let translation = parentBoneJelly._OutTarget.worldTranslation;
 				let localParentOut = vec2.transformMat2d(vec2.create(), translation, inverseWorld);
 				vec2.normalize(localParentOut, localParentOut);
-				
+				vec2.negate(this._InDirection, localParentOut);
 			}
 			else
 			{
@@ -278,7 +278,8 @@ export default class JellyComponent extends ActorComponent
 			vec2.scale(this._InPoint, this._InDirection, this._EaseIn*bone._Length*CurveConstant);
 		}
 		else
-		{			vec2.set(this._InDirection, 1, 0);
+		{			
+			vec2.set(this._InDirection, 1, 0);
 			vec2.set(this._InPoint, this._EaseIn*bone._Length*CurveConstant, 0);
 		}
 
@@ -294,6 +295,7 @@ export default class JellyComponent extends ActorComponent
 		{
 			let firstBone = bone._FirstBone;
 			let firstBoneJelly = firstBone.jelly;
+			let scaledOut;
 			if(firstBoneJelly && firstBoneJelly._InTarget)
 			{
 				let translation = firstBoneJelly._InTarget.worldTranslation;
@@ -301,10 +303,7 @@ export default class JellyComponent extends ActorComponent
 				let outDir = vec2.transformMat2(this._OutDirection, worldChildInDir, inverseWorld);
 				vec2.normalize(outDir, outDir);
 
-				let scaledOut = vec2.scale(vec2.create(), outDir, this._EaseOut*bone._Length*CurveConstant);
-
-				vec2.set(this._OutPoint, bone._Length, 0.0);
-				vec2.add(this._OutPoint, this._OutPoint, scaledOut);
+				scaledOut = vec2.scale(vec2.create(), outDir, this._EaseOut*bone._Length*CurveConstant);
 			}
 			else
 			{
@@ -319,10 +318,10 @@ export default class JellyComponent extends ActorComponent
 				let localOut = vec2.transformMat2(this._OutDirection, sum, inverseWorld);
 				vec2.normalize(localOut, localOut);
 
-				let scaledOut = vec2.scale(vec2.create(), localOut, this._EaseOut*bone._Length*CurveConstant);
-				vec2.set(this._OutPoint, bone._Length, 0.0);
-				vec2.add(this._OutPoint, this._OutPoint, scaledOut);
+				scaledOut = vec2.scale(vec2.create(), localOut, this._EaseOut*bone._Length*CurveConstant);
 			}
+			vec2.set(this._OutPoint, bone._Length, 0.0);
+			vec2.add(this._OutPoint, this._OutPoint, scaledOut);
 		}
 		else
 		{
