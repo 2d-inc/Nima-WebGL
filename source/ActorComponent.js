@@ -1,87 +1,80 @@
-var ActorComponent = (function ()
+export default class ActorComponent
 {
-	function ActorComponent()
+	constructor()
 	{
 		this._Name = "Component";
 		this._Parent = null;
 		this._CustomProperties = [];
+		this._DirtMask = 0;
+		this._GraphOrder = -1;
+		this._Dependents = null;
+		this._Actor = null;
+		this._ParentIdx = -1;
 	}
 
-	/*ActorComponent.prototype = 
-	{ 
-		constructor:ActorComponent,
-		get parent() 
-		{ 
-			return this._Parent;
-		},
-	};*/
-
-	ActorComponent.defineProperties = function(prototype)
+	get parent()
 	{
-		Object.defineProperties(prototype,
+		return this._Parent;
+	}
+
+	onDirty(dirt)
+	{
+
+	}
+
+	initialize(actor, graphics)
+	{
+
+	}
+
+	update(dirt)
+	{
+		
+	}
+
+	advance(seconds)
+	{
+	}
+
+	resolveComponentIndices(components)
+	{
+		if(this._ParentIdx !== -1)
 		{
-			parent:
+			let parent = components[this._ParentIdx];
+			this._Parent = parent;
+			if(this.isNode && parent && parent._Children)
 			{
-				get: function()
-				{
-					return this._Parent;
-				}
+				parent._Children.push(this);
 			}
-		});
-	};
-
-	ActorComponent.defineProperties(ActorComponent.prototype);
-
-	ActorComponent.subclass = function(other)
-	{
-		other.prototype.initialize = ActorComponent.prototype.initialize;
-		other.prototype.advance = ActorComponent.prototype.advance;
-		other.prototype.resolveComponentIndices = ActorComponent.prototype.resolveComponentIndices;
-		other.prototype.getCustomProperty = ActorComponent.prototype.getCustomProperty;
-	};
-
-
-	ActorComponent.prototype.initialize = function(actor, graphics)
-	{
-
-	};
-
-	ActorComponent.prototype.advance = function(seconds)
-	{
-	};
-
-	ActorComponent.prototype.resolveComponentIndices = function(components)
-	{
-		if(this._ParentIdx !== undefined)
-		{
-			this._Parent = components[this._ParentIdx];
-			if(this.isNode && this._Parent && this._Parent._Children)
+			if(parent)
 			{
-				this._Parent._Children.push(this);
+				this._Actor.addDependency(this, parent);
 			}
 		}
-	};
+	}
 
-	ActorComponent.prototype.copy = function(component, resetActor)
+	completeResolve()
+	{
+	}
+
+	copy(component, resetActor)
 	{
 		this._Name = component._Name;
 		this._ParentIdx = component._ParentIdx;
 		this._Idx = component._Idx;
-	};
+		this._Actor = resetActor;
+	}
 
-	ActorComponent.prototype.getCustomProperty = function(name)
+	getCustomProperty(name)
 	{
-		var props = this._CustomProperties;
-		for(var i = 0; i < props.length; i++)
+		let props = this._CustomProperties;
+		for(let prop of props)
 		{
-			var prop = props[i];
 			if(prop._Name === name)
 			{
 				return prop;
 			}
 		}
 		return null;
-	};
-	
-	return ActorComponent;
-}());
+	}
+}

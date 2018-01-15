@@ -1,41 +1,193 @@
-var Actor = (function ()
+import Dispatcher from "./Dispatcher.js";
+import ActorNode from "./ActorNode.js";
+import ActorImage from "./ActorImage.js";
+import NestedActorNode from "./NestedActorNode.js";
+import ActorIKTarget from "./ActorIKTarget.js";
+import AnimationInstance from "./AnimationInstance.js";
+
+export default class Actor extends Dispatcher
 {
-	function Actor()
+	constructor()
 	{
-		Dispatcher.call(this);
+		super();
 
 		this._Components = [];
+		this._NestedActorAssets = [];
 		this._Nodes = [];
-		this._Images = [];
+		this._Drawables = [];
 		this._Atlases = [];
 		this._RootNode = new ActorNode();
 		this._Components.push(this._RootNode);
 		this._Nodes.push(this._RootNode);
 		this._Animations = [];
-		this._Solvers = [];
 		this._IsInstance = false;
 		this._IsImageSortDirty = false;
+
+		this._Order = null;
+		this._IsDirty = false;
+		this._DirtDepth = 0;
 	}
 
-	Actor.prototype = 
-	{ 
-		constructor:Actor,
-		get root()
-		{
-			return this._RootNode;
-		}
-	};
-	
-	Dispatcher.subclass(Actor);
-
-	Actor.prototype.resolveHierarchy = function(graphics)
+	addDependency(a, b)
 	{
-		var components = this._Components;
-		for(var i = 1; i < components.length; i++)
+		// "a" depends on "b"
+		let dependents = b._Dependents;
+		if(!dependents)
 		{
-			var component = components[i];
+			dependents = b._Dependents = [];
+		}
+		if(dependents.indexOf(a) !== -1)
+		{
+			return false;
+		}
+		dependents.push(a);
+		return true;
+	}
+
+	sortDependencies()
+	{
+		let perm = new Set();
+		let temp = new Set();
+
+		let order = [];
+
+		function visit(n)
+		{
+			if(perm.has(n))
+			{
+				return true;
+			}
+			if(temp.has(n))
+			{
+				console.warn("Dependency cycle!", n);
+				return false;
+			}
+			
+			temp.add(n);
+
+			let dependents = n._Dependents;
+			if(dependents)
+			{
+				for(let d of dependents)
+				{
+					if(!visit(d))
+					{
+						return false;
+					}
+				}
+			}
+			perm.add(n);
+			order.unshift(n);
+			
+			return true;
+		}
+
+		if(!visit(this._RootNode))
+		{
+			// We have cyclic dependencies.
+			return false;
+		}
+
+		for(let i = 0; i < order.length; i++)
+		{
+			let component = order[i];
+			component._GraphOrder = i;
+			component._DirtMask = 255;
+		}
+		this._Order = order;
+		this._IsDirty = true;
+	}
+
+	addDirt(component, value, recurse)
+	{
+		if((component._DirtMask & value) === value)
+		{
+			// Already marked.
+			return false;
+		}
+
+		// Make sure dirt is set before calling anything that can set more dirt.
+		let dirt = component._DirtMask | value;
+		component._DirtMask = dirt;
+
+		this._IsDirty = true;
+
+		component.onDirty(dirt);
+
+		// If the order of this component is less than the current dirt depth, update the dirt depth
+		// so that the update loop can break out early and re-run (something up the tree is dirty).
+		if(component._GraphOrder < this._DirtDepth)
+		{
+			this._DirtDepth = component._GraphOrder;	
+		}
+		if(!recurse)
+		{
+			return true;
+		}
+		let dependents = component._Dependents;
+		if(dependents)
+		{
+			for(let d of dependents)
+			{
+				this.addDirt(d, value, recurse);
+			}
+		}
+
+		return true;
+	}
+
+	update()
+	{
+		if(!this._IsDirty)
+		{
+			return false;
+		}
+		
+		let order = this._Order;
+		let end = order.length;
+
+		const maxSteps = 100;
+		let step = 0;
+		while(this._IsDirty && step < maxSteps)
+		{
+			this._IsDirty = false;
+			// Track dirt depth here so that if something else marks dirty, we restart.
+			for(let i = 0; i < end; i++)
+			{
+				let component = order[i];
+				this._DirtDepth = i;
+				let d = component._DirtMask;
+				if(d === 0)
+				{
+					continue;
+				}
+				component._DirtMask = 0;
+				component.update(d);
+
+				if(this._DirtDepth < i)
+				{
+					break;
+				}
+			}
+			step++;
+		}
+
+		return true;
+	}
+
+	get root()
+	{
+		return this._RootNode;
+	}
+
+	resolveHierarchy(graphics)
+	{
+		let components = this._Components;
+		for(let component of components)
+		{
 			if(component != null)
 			{
+				component._Actor = this;
 				component.resolveComponentIndices(components);
 				if(component.isNode)
 				{
@@ -43,131 +195,134 @@ var Actor = (function ()
 				}
 				switch(component.constructor)
 				{
+					case NestedActorNode:
 					case ActorImage:
-						this._Images.push(component);
-						break;
-					case ActorIKTarget:
-						this._Solvers.push(component);
+						this._Drawables.push(component);
 						break;
 				}
 			}
 		}
 
-		this._Images.sort(function(a,b)
+		for(let component of components)
+		{
+			if(component != null)
+			{
+				component.completeResolve();
+			}
+		}
+
+		this.sortDependencies();
+
+		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
 		});
+	}
 
-		this._Solvers.sort(function(a,b)
-		{
-			return a._Order - b._Order;
-		});
-	};
-
-	Actor.prototype.dispose = function(graphics)
+	dispose(graphics)
 	{
 		if(!this._IsInstance)
 		{
-			// Load all the atlases.
-			var atlases = this._Atlases;
-			for(var i = 0; i < atlases.length; i++)
+			let atlases = this._Atlases;
+			for(let atlas of atlases)
 			{
-				var atlas = atlases[i];
 				graphics.deleteTexture(atlas);
 			}
 		}
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			images[i].dispose(this, graphics);
+			drawable.dispose(this, graphics);
 		}
-	};
+	}
 
-	Actor.prototype.initialize = function(graphics)
+	initialize(graphics)
 	{
 		if(!this._IsInstance)
 		{
 			// Load all the atlases.
-			var atlases = this._Atlases;
-			for(var i = 0; i < atlases.length; i++)
+			let atlases = this._Atlases;
+			for(let i = 0; i < atlases.length; i++)
 			{
-				var atlas = atlases[i];
+				let atlas = atlases[i];
 				atlases[i] = graphics.loadTexture(atlas);
 			}
+
+			for(let nested of this._NestedActorAssets)
+			{
+				if(nested.actor)
+				{
+					nested.actor.initialize(graphics);
+				}
+			}
 		}
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			images[i].initialize(this, graphics);
+			drawable.initialize(this, graphics);
 		}
 	}
 
-	Actor.prototype.advance = function(seconds)
+	advance(seconds)
 	{
-		// First iterate solvers to see if any is dirty.
-		var solvers = this._Solvers;
-		var runSolvers = false;
-		for(var i = 0; i < solvers.length; i++)
-		{
-			var solver = solvers[i];
-			if(solver.needsSolve())
-			{
-				runSolvers = true;
-				break;
-			}
-		}
+		// // First iterate solvers to see if any is dirty.
+		// let solvers = this._Solvers;
+		// let runSolvers = false;
+		// for(let solver of solvers)
+		// {
+		// 	if(solver.needsSolve())
+		// 	{
+		// 		runSolvers = true;
+		// 		break;
+		// 	}
+		// }
 
-		var nodes = this._Nodes;
-		for(var i = 0; i < nodes.length; i++)
-		{
-			var node = nodes[i];
-			if(node)
-			{
-				node.updateTransforms();
-			}
-		}
+		// let nodes = this._Nodes;
+		// for(let node of nodes)
+		// {
+		// 	if(node)
+		// 	{
+		// 		node.updateTransforms();
+		// 	}
+		// }
 
-		if(runSolvers)
-		{
-			for(var i = 0; i < solvers.length; i++)
-			{
-				var solver = solvers[i];
-				solver.solveStart();
-			}	
+		// if(runSolvers)
+		// {
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver.solveStart();
+		// 	}	
 
-			for(var i = 0; i < solvers.length; i++)
-			{
-				var solver = solvers[i];
-				solver.solve();
-			}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver.solve();
+		// 	}
 
-			for(var i = 0; i < solvers.length; i++)
-			{
-				var solver = solvers[i];
-				solver._SuppressMarkDirty = true;
-			}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver._SuppressMarkDirty = true;
+		// 	}
 
-			for(var i = 0; i < nodes.length; i++)
-			{
-				var node = nodes[i];
-				if(node)
-				{
-					node.updateTransforms();
-				}
-			}
+		// 	for(let node of nodes)
+		// 	{
+		// 		if(node)
+		// 		{
+		// 			node.updateTransforms();
+		// 		}
+		// 	}
 
-			for(var i = 0; i < solvers.length; i++)
-			{
-				var solver = solvers[i];
-				solver._SuppressMarkDirty = false;
-			}
-		}
+		// 	for(let solver of solvers)
+		// 	{
+		// 		solver._SuppressMarkDirty = false;
+		// 	}
+		// }
 
-		var components = this._Components;
+		this.update();
+
+		let components = this._Components;
 		// Advance last (update graphics buffers and such).
-		for(var i = 0; i < components.length; i++)
+		for(let component of components)
 		{
-			var component = components[i];
 			if(component)
 			{
 				component.advance(seconds);
@@ -176,93 +331,128 @@ var Actor = (function ()
 
 		if(this._IsImageSortDirty)
 		{
-			this._Images.sort(function(a,b)
+			this._Drawables.sort(function(a,b)
 			{
 				return a._DrawOrder - b._DrawOrder;
 			});
 			this._IsImageSortDirty = false;
 		}
-	};
+	}
 
-	Actor.prototype.draw = function(graphics)
+	draw(graphics)
 	{
-		var images = this._Images;
-		for(var i = 0; i < images.length; i++)
+		let drawables = this._Drawables;
+		for(let drawable of drawables)
 		{
-			var img = images[i];
-			img.draw(graphics);
+			drawable.draw(graphics);
 		}
-	};
+	}
 
-	Actor.prototype.getNode = function(name)
+	getNode(name)
 	{
-		var nodes = this._Nodes;
-		for(var i = 0; i < nodes.length; i++)
+		let nodes = this._Nodes;
+		for(let node of nodes)
 		{
-			var node = nodes[i];
 			if(node._Name === name)
 			{
 				return node;
 			}
 		}
 		return null;
-	};
+	}
 
-	Actor.prototype.getAnimation = function(name)
+	getAnimation(name)
 	{
-		var animations = this._Animations;
-		for(var i = 0; i < animations.length; i++)
+		let animations = this._Animations;
+		for(let animation of animations)
 		{
-			var animation = animations[i];
 			if(animation._Name === name)
 			{
 				return animation;
 			}
 		}
 		return null;
-	};
+	}
 
-	Actor.prototype.getAnimationInstance = function(name)
+	getAnimationInstance(name)
 	{
-		var animation = this.getAnimation(name);
+		let animation = this.getAnimation(name);
 		if(!animation)
 		{
 			return null;
 		}
 		return new AnimationInstance(this, animation);
-	};
+	}
 
-	Actor.prototype.makeInstance = function()
+	makeInstance()
 	{
-		var actorInstance = new Actor();
+		let actorInstance = new Actor();
 		actorInstance._IsInstance = true;
 		actorInstance.copy(this);
 		return actorInstance;
-	};
+	}
 
-	Actor.prototype.copy = function(actor)
+	computeAABB()
 	{
-		var components = actor._Components;
+		let min_x = Number.MAX_VALUE;
+		let min_y = Number.MAX_VALUE;
+		let max_x = -Number.MAX_VALUE;
+		let max_y = -Number.MAX_VALUE;
+
+		for(let drawable of this._Drawables)
+		{
+			if(drawable.opacity < 0.01)
+			{
+				continue;
+			}
+			let aabb = drawable.computeAABB();
+			if(!aabb)
+			{
+				continue;
+			}
+			if(aabb[0] < min_x)
+			{
+				min_x = aabb[0];
+			}
+			if(aabb[1] < min_y)
+			{
+				min_y = aabb[1];
+			}
+			if(aabb[2] > max_x)
+			{
+				max_x = aabb[2];
+			}
+			if(aabb[3] > max_y)
+			{
+				max_y = aabb[3];
+			}
+		}
+
+		return new Float32Array([min_x, min_y, max_x, max_y]);
+	}
+
+	copy(actor)
+	{
+		let components = actor._Components;
 		this._Animations = actor._Animations;
 		this._Atlases = actor._Atlases;
 		this._Components.length = 0;
-		for(var i = 0; i < components.length; i++)
+		this._Nodes.length = 0;
+		this._Drawables.length = 0;
+
+		for(let component of components)
 		{
-			var component = components[i];
 			if(!component)
 			{
 				this._Components.push(null);
 				continue;
 			}
-			var instanceNode = component.makeInstance(this);
+			let instanceNode = component.makeInstance(this);
 			switch(instanceNode.constructor)
 			{
+				case NestedActorNode:
 				case ActorImage:
-					this._Images.push(instanceNode);
-					break;
-
-				case ActorIKTarget:
-					this._Solvers.push(instanceNode);
+					this._Drawables.push(instanceNode);
 					break;
 			}
 			if(instanceNode.isNode)
@@ -273,9 +463,9 @@ var Actor = (function ()
 		}
 		this._RootNode = this._Components[0];
 
-		for(var i = 1; i < this._Components.length; i++)
+		for(let i = 1; i < this._Components.length; i++)
 		{
-			var component = this._Components[i];
+			let component = this._Components[i];
 			if(component == null)
 			{
 				continue;
@@ -283,16 +473,21 @@ var Actor = (function ()
 			component.resolveComponentIndices(this._Components);
 		}
 
-		this._Images.sort(function(a,b)
+		for(let i = 1; i < this._Components.length; i++)
+		{
+			let component = this._Components[i];
+			if(component == null)
+			{
+				continue;
+			}
+			component.completeResolve();
+		}
+
+		this.sortDependencies();
+
+		this._Drawables.sort(function(a,b)
 		{
 			return a._DrawOrder - b._DrawOrder;
 		});
-
-		this._Solvers.sort(function(a,b)
-		{
-			return a._Order - b._Order;
-		});
-	};	
-
-	return Actor;
-}());
+	}
+}

@@ -1,8 +1,12 @@
-var ActorImage = (function ()
+import ActorNode from "./ActorNode.js";
+import {vec2, mat2d} from "gl-matrix";
+
+let White = [1.0, 1.0, 1.0, 1.0];
+export default class ActorImage extends ActorNode
 {
-	function ActorImage()
+	constructor()
 	{
-		ActorNode.call(this);
+		super();
 		this._DrawOrder = 0;
 		this._BlendMode = ActorImage.BlendModes.Normal;
 		this._AtlasIndex = -1;
@@ -18,79 +22,141 @@ var ActorImage = (function ()
 		this._VertexBuffer = null;
 		this._IndexBuffer = null;
 		this._DeformVertexBuffer = null;
+
+		this._SequenceFrames = null;
+		this._SequenceFrame = 0;
+		this._SequenceUVs = null;
+		this._SequenceUVBuffer = null;
 	}
 
-	/*ActorImage.prototype = 
-	{ 
-		constructor:ActorImage,
-		get hasVertexDeformAnimation() 
-		{ 
-			return this._HasVertexDeformAnimation; 
-		},
-		set hasVertexDeformAnimation(value)
-		{
-			this._HasVertexDeformAnimation = value;
-			this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
+	get hasVertexDeformAnimation()
+	{
+		return this._HasVertexDeformAnimation;
+	}
+		
+	set hasVertexDeformAnimation(value)
+	{
+		this._HasVertexDeformAnimation = value;
+		this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
 
-			// Copy the deform verts from the rig verts.
-			var writeIdx = 0;
-			var readIdx = 0;
-			var readStride = this._VertexStride;
-			for(var i = 0; i < this._NumVertices; i++)
+		// Copy the deform verts from the rig verts.
+		var writeIdx = 0;
+		var readIdx = 0;
+		var readStride = this._VertexStride;
+		for(var i = 0; i < this._NumVertices; i++)
+		{
+			this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
+			this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
+			readIdx += readStride;
+		}
+	}
+
+	computeAABB()
+	{
+		let worldVertices = this.computeWorldVertices();
+		let nv = worldVertices.length/2;
+		let min_x = Number.MAX_VALUE;
+		let min_y = Number.MAX_VALUE;
+		let max_x = -Number.MAX_VALUE;
+		let max_y = -Number.MAX_VALUE;
+
+		let readIdx = 0;
+		for(let i = 0; i < nv; i++)
+		{
+			let x = worldVertices[readIdx++];
+			let y = worldVertices[readIdx++];
+			if(x < min_x)
 			{
-				this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
-				this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
-				readIdx += readStride;
+				min_x = x;
+			}
+			if(y < min_y)
+			{
+				min_y = y;
+			}
+			if(x > max_x)
+			{
+				max_x = x;
+			}
+			if(y > max_y)
+			{
+				max_y = y;
 			}
 		}
-	};*/
 
+		return new Float32Array([min_x, min_y, max_x, max_y]);
+	}
 
-	ActorImage.defineProperties = function(prototype)
+	computeWorldVertices()
 	{
-		ActorNode.defineProperties(prototype);
+		let vertices = this._HasVertexDeformAnimation ? this._AnimationDeformedVertices : this._Vertices;
 
-		Object.defineProperties(prototype,
+		let stride = this._HasVertexDeformAnimation ? 2 : this._VertexStride;
+		let readIdx = 0;
+		let writeIdx = 0;
+
+		let world = this._WorldTransform;
+
+		let nv = this._NumVertices;
+		let deformed = new Float32Array(nv*2);
+
+		if(this._ConnectedBones)
 		{
-			hasVertexDeformAnimation:
-			{
-				get: function()
-				{
-					return this._HasVertexDeformAnimation;
-				},
-				set: function(value)
-				{
-					this._HasVertexDeformAnimation = value;
-					this._AnimationDeformedVertices = new Float32Array(this._NumVertices * 2);
+			let weightIndex = 4;
+			let weightStride = 12;
+			let weightVertices = this._Vertices;
 
-					// Copy the deform verts from the rig verts.
-					var writeIdx = 0;
-					var readIdx = 0;
-					var readStride = this._VertexStride;
-					for(var i = 0; i < this._NumVertices; i++)
+			var bones = this._BoneMatrices;
+
+			for(let i = 0; i < nv; i++)
+			{
+				let x = vertices[readIdx];
+				let y = vertices[readIdx+1];
+				
+				readIdx += stride;
+
+				var px = world[0] * x + world[2] * y + world[4];
+				var py = world[1] * x + world[3] * y + world[5];
+
+				var fm = new Float32Array(6);
+				for(var wi = 0; wi < 4; wi++)
+				{
+					var boneIndex = weightVertices[weightIndex+wi];
+					var weight = weightVertices[weightIndex+wi+4];
+
+					var bb = boneIndex*6;
+
+					for(let j = 0; j < 6; j++)
 					{
-						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx];
-						this._AnimationDeformedVertices[writeIdx++] = this._Vertices[readIdx+1];
-						readIdx += readStride;
+						fm[j] += bones[bb+j] * weight;
 					}
 				}
+
+				weightIndex += weightStride;
+
+				x = fm[0] * px + fm[2] * py + fm[4];
+				y = fm[1] * px + fm[3] * py + fm[5];
+
+				deformed[writeIdx++] = x;
+				deformed[writeIdx++] = y;
 			}
-		});
-	};
+		}
+		else
+		{
+			for(let i = 0; i < nv; i++)
+			{
+				let x = vertices[readIdx];
+				let y = vertices[readIdx+1];
 
-	ActorImage.defineProperties(ActorImage.prototype);
+				deformed[writeIdx++] = world[0] * x + world[2] * y + world[4];
+				deformed[writeIdx++] = world[1] * x + world[3] * y + world[5];
+				readIdx += stride;
+			}
+		}
 
-	ActorNode.subclass(ActorImage);
-	
-	ActorImage.BlendModes = 
-	{
-		"Normal":0,
-		"Multiply":1,
-		"Screen":2,
-		"Additive":3
-	};
+		return deformed;
+	}
 
-	ActorImage.prototype.dispose = function(actor, graphics)
+	dispose(actor, graphics)
 	{
 		if(this._IsInstance)
 		{
@@ -112,19 +178,45 @@ var ActorImage = (function ()
 				this._IndexBuffer.dispose();
 				this._IndexBuffer = null;
 			}
-
+			if(this._SequenceUVBuffer)
+			{
+				this._SequenceUVBuffer.dispose();
+				this._SequenceUVBuffer = null;
+			}
 		}
-	};
+	}
 
-	ActorImage.prototype.initialize = function(actor, graphics)
+	initialize(actor, graphics)
 	{
 		if(!this._IsInstance)
 		{
+			if(this._VertexBuffer)
+			{
+				this._VertexBuffer.dispose();
+			}
+			if(this._VertexBuffer)
+			{
+				this._VertexBuffer.dispose();
+			}
+			if(this._SequenceUVBuffer)
+			{
+				this._SequenceUVBuffer.dispose();
+			}
+
 			this._VertexBuffer = graphics.makeVertexBuffer(this._Vertices);
 			this._IndexBuffer = graphics.makeIndexBuffer(this._Triangles);
+
+			if(this._SequenceUVs)
+			{
+				this._SequenceUVBuffer = graphics.makeVertexBuffer(this._SequenceUVs);
+			}
 		}
 		else if(this._HasVertexDeformAnimation)
 		{
+			if(this._DeformVertexBuffer)
+			{
+				this._DeformVertexBuffer.dispose();
+			}
 			this._DeformVertexBuffer = graphics.makeVertexBuffer(this._AnimationDeformedVertices);
 		}
 
@@ -140,13 +232,14 @@ var ActorImage = (function ()
 			bt[4] = 0;
 			bt[5] = 0;
 		}
-		delete this._Vertices;
+		// Keep vertices for world calculations.
+		// delete this._Vertices;
 		delete this._Triangles;
-
+		delete this._SequenceUVs;
 		this._Texture = actor._Atlases[this._AtlasIndex];
-	};
+	}
 
-	ActorImage.prototype.advance = function()
+	advance()
 	{
 		if(this._HasVertexDeformAnimation && this._VerticesDirty)
 		{
@@ -164,9 +257,17 @@ var ActorImage = (function ()
 			for(var i = 0; i < this._ConnectedBones.length; i++)
 			{
 				var cb = this._ConnectedBones[i];
-
-				cb.node.updateTransforms();
-				var wt = mat2d.mul(mat, cb.node.getWorldTransform(), cb.ibind);
+				if(!cb.node)
+				{
+					bt[bidx++] = 1;
+					bt[bidx++] = 0;
+					bt[bidx++] = 0;
+					bt[bidx++] = 1;
+					bt[bidx++] = 0;
+					bt[bidx++] = 0;
+					continue;
+				}
+				var wt = mat2d.mul(mat, cb.node._WorldTransform, cb.ibind);
 
 				bt[bidx++] = wt[0];
 				bt[bidx++] = wt[1];
@@ -176,10 +277,15 @@ var ActorImage = (function ()
 				bt[bidx++] = wt[5];
 			}
 		}
-	};
+	}
 
-	ActorImage.prototype.draw = function(graphics)
+	draw(graphics)
 	{
+		if(this._RenderCollapsed)
+		{
+			return;
+		}
+
 		var t = this._WorldTransform;
 		switch(this._BlendMode)
 		{
@@ -197,31 +303,25 @@ var ActorImage = (function ()
 				break;
 
 		}
-		if(this._ConnectedBones)
-		{
-			if(this._DeformVertexBuffer)
-			{
-				graphics.drawTexturedAndDeformedSkin(t, this._DeformVertexBuffer, this._VertexBuffer, this._IndexBuffer, this._BoneMatrices, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-			else
-			{
-				graphics.drawTexturedSkin(t, this._VertexBuffer, this._IndexBuffer, this._BoneMatrices, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-		}
-		else
-		{
-			if(this._DeformVertexBuffer)
-			{
-				graphics.drawTexturedAndDeformed(t, this._DeformVertexBuffer, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-			else
-			{
-				graphics.drawTextured(t, this._VertexBuffer, this._IndexBuffer, this._RenderOpacity, [1.0, 1.0, 1.0, 1.0], this._Texture);
-			}
-		}
-	};
 
-	ActorImage.prototype.resolveComponentIndices = function(components)
+		let uvBuffer =  this._SequenceUVBuffer || null;
+		let uvOffset;
+		if(this._SequenceUVBuffer)
+		{
+			let numFrames = this._SequenceFrames.length;
+			let frame = this._SequenceFrame%numFrames;
+			if(uvOffset < 0)
+			{
+				frame += numFrames;
+			}
+			uvOffset = this._SequenceFrames[frame].offset;
+		}
+
+		graphics.prep(this._Texture, White, this._RenderOpacity, t, this._VertexBuffer, this._ConnectedBones ? this._BoneMatrices : null, this._DeformVertexBuffer, uvBuffer, uvOffset);
+		graphics.draw(this._IndexBuffer);
+	}
+
+	resolveComponentIndices(components)
 	{
 		ActorNode.prototype.resolveComponentIndices.call(this, components);
 
@@ -231,22 +331,25 @@ var ActorImage = (function ()
 			{
 				var cb = this._ConnectedBones[j];
 				cb.node = components[cb.componentIndex];
-				cb.node._IsConnectedToImage = true;
+				if(cb.node)
+				{
+					cb.node._IsConnectedToImage = true;
+				}
 			}
 		}
-	};
+	}
 
-	ActorImage.prototype.makeInstance = function(resetActor)
+	makeInstance(resetActor)
 	{
 		var node = new ActorImage();
 		node._IsInstance = true;
 		ActorImage.prototype.copy.call(node, this, resetActor);
 		return node;	
-	};
+	}
 
-	ActorImage.prototype.copy = function(node, resetActor)
+	copy(node, resetActor)
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
+		super.copy(node, resetActor);
 
 		this._DrawOrder = node._DrawOrder;
 		this._BlendMode = node._BlendMode;
@@ -259,11 +362,13 @@ var ActorImage = (function ()
 		// N.B. actor.initialize must've been called before instancing.
 		this._VertexBuffer = node._VertexBuffer;
 		this._IndexBuffer = node._IndexBuffer;
+		this._SequenceUVBuffer = node._SequenceUVBuffer;
+		this._SequenceFrames = node._SequenceFrames;
 		if (node._HasVertexDeformAnimation)
 		{
-			var deformedVertexLength = this._NumVertices * 2;
+			let deformedVertexLength = this._NumVertices * 2;
 			this._AnimationDeformedVertices = new Float32Array(deformedVertexLength);
-			for(var i = 0; i < deformedVertexLength; i++)
+			for(let i = 0; i < deformedVertexLength; i++)
 			{
 				this._AnimationDeformedVertices[i] = node._AnimationDeformedVertices[i];
 			}
@@ -272,9 +377,8 @@ var ActorImage = (function ()
 		if(node._ConnectedBones)
 		{
 			this._ConnectedBones = [];
-			for(var i = 0; i < node._ConnectedBones.length; i++)
+			for(let cb of  node._ConnectedBones)
 			{
-				var cb = node._ConnectedBones[i];
 				// Copy all props except for the actual node reference which will update in our resolve.
 				this._ConnectedBones.push({
 						componentIndex:cb.componentIndex,
@@ -283,7 +387,14 @@ var ActorImage = (function ()
 					});
 			}
 		}
-	};
+	}
+}
 
-	return ActorImage;
-}());
+
+ActorImage.BlendModes = 
+{
+	"Normal":0,
+	"Multiply":1,
+	"Screen":2,
+	"Additive":3
+};

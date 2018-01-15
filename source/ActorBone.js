@@ -1,37 +1,33 @@
-var ActorBone = (function ()
-{
-	function ActorBone()
-	{
-		ActorNode.call(this);
+import ActorBoneBase from "./ActorBoneBase.js";
 
-		this._Length = 0;
-		this._IsConnectedToImage = false;
+export default class ActorBone extends ActorBoneBase
+{
+	constructor()
+	{
+		super();
+
+		this._FirstBone = null;
 	}
 
-	ActorNode.defineProperties(ActorBone.prototype);
-	ActorNode.subclass(ActorBone);
-	
-	ActorBone.prototype.getTipWorldTranslation = function()
-	{
-		var transform = mat2d.create();
-		transform[4] = this._Length;
-		mat2d.mul(transform, this.getWorldTransform(), transform);
-		return vec2.set(vec2.create(), transform[4], transform[5]);
-	};
-
-	ActorBone.prototype.makeInstance = function(resetActor)
+	makeInstance(resetActor)
 	{
 		var node = new ActorBone();
-		ActorBone.prototype.copy.call(node, this, resetActor);
+		node.copy(this, resetActor);
 		return node;	
-	};
+	}
 
-	ActorBone.prototype.copy = function(node, resetActor)
+	completeResolve()
 	{
-		ActorNode.prototype.copy.call(this, node, resetActor);
-		this._Length = node._Length;
-		this._IsConnectedToImage = node._IsConnectedToImage;
-	};
-
-	return ActorBone;
-}());
+		super.completeResolve();
+		
+		let children = this._Children;
+		for(let child of children)
+		{
+			if(child instanceof ActorBone)
+			{
+				this._FirstBone = child;
+				return;
+			}
+		}
+	}	
+}

@@ -5,8 +5,8 @@ var Archer = (function ()
 	var _Scale = 0.2;
 	var _ScreenScale = 1.0;
 
-	var _AimLookup = new Array(40);
-	var _AimWalkingLookup = new Array(40);
+	var _AimLookup = new Array(360);
+	var _AimWalkingLookup = new Array(360);
 	var _Actor;
 
 	var _MaxBoostSpeed = 1000.0;
@@ -18,7 +18,7 @@ var Archer = (function ()
 
 	function Archer(canvas)
 	{
-		this._Graphics = new Graphics(canvas);
+		this._Graphics = new Nima.Graphics(canvas);
 		this._LastAdvanceTime = Date.now();
 		this._ViewTransform = mat2d.create();
 		this._AimAnimation = null;
@@ -178,11 +178,13 @@ var Archer = (function ()
 				scaleX = -1.0;
 			}
 
+			//actor._RootNode.opacity = 0.15;
+
 			if(actor._RootNode._Scale[0] != scaleX)
 			{
 				actor._RootNode._Scale[0] = scaleX;	
 				actor._RootNode._IsDirty = true;
-				actor._RootNode.markWorldDirty();
+				actor._RootNode.markTransformDirty();
 			}
 
 			if(_This._IdleAnimation)
@@ -276,7 +278,7 @@ var Archer = (function ()
 			var speedModifier = (_This._Fast ? 1.0 - _This._GroundSpeedProperty.value : _This._GroundSpeedProperty.value)*0.5+0.5;
 			actor._RootNode._Translation[0] += _This._HorizontalSpeed * (speedModifier) * /*(0.5 + 0.5*moveMix) */ elapsed * moveSpeed;	
 			actor._RootNode._IsDirty = true;
-			actor._RootNode.markWorldDirty();
+			actor._RootNode.markTransformDirty();
 
 			if(_JumpNext)
 			{
@@ -347,7 +349,7 @@ var Archer = (function ()
 			}
 			actor._RootNode._Translation[1] = _This._Y;
 			actor._RootNode._IsDirty = true;
-			actor._RootNode.markWorldDirty();
+			actor._RootNode.markTransformDirty();
 
 			if(_This._YVelocity < 0.0)
 			{
@@ -536,7 +538,34 @@ var Archer = (function ()
 
 		graphics.clear();
 		graphics.setView(viewer._ViewTransform);
+
+
+		let aabb = viewer._ActorInstance.computeAABB();
+
+		let width = (aabb[2] - aabb[0]) * 0.5;
+		let height = (aabb[3] - aabb[1]) * 0.5;
+
+		if(!viewer.vb)
+		{
+			let v = [0, 0, 0, 0,
+					100, 0, 0, 0,
+					100, 100, 0, 0,
+					0, 100, 0, 0];
+			let i = [0, 1, 2,
+					0, 2, 3];
+			viewer.vb = graphics.makeVertexBuffer(v);
+			viewer.ib = graphics.makeIndexBuffer(i);
+		}
+		let v = [aabb[0], aabb[1], 0, 0,
+					aabb[2], aabb[1], 0, 0,
+					aabb[2], aabb[3], 0, 0,
+					aabb[0], aabb[3], 0, 0];
+		viewer.vb.update(v);
+		//graphics.disableBlending();
+		//graphics.drawTextured(mat2d.create(), viewer.vb, viewer.ib, 1.0, [1.0, 1.0, 1.0, 1.0], viewer._ActorInstance._Atlases[0]);
+
 		viewer._ActorInstance.draw(graphics);
+
 	}
 
 	function _ScheduleAdvance(viewer)
@@ -560,7 +589,7 @@ var Archer = (function ()
 
 	Archer.prototype.load = function(url, callback)
 	{
-		var loader = new ActorLoader();
+		var loader = new Nima.ActorLoader();
 		var _This = this;
 		loader.load(url, function(actor)
 		{
@@ -653,6 +682,7 @@ var Archer = (function ()
 						{
 							var position = i / (_AimLookup.length-1) * aim._Duration;
 							aim.apply(position, actor, 1.0);
+							actor.update();
 							var m = arrowNode.getWorldTransform();
 							_AimLookup[i] = [
 								vec2.normalize(vec2.create(), vec2.set(vec2.create(), m[0], m[1])),
@@ -667,6 +697,7 @@ var Archer = (function ()
 						{
 							var position = i / (_AimWalkingLookup.length-1) * aim._Duration;
 							aim.apply(position, actor, 1.0);
+							actor.update();
 							var m = arrowNode.getWorldTransform();
 							_AimWalkingLookup[i] = [
 								vec2.normalize(vec2.create(), vec2.set(vec2.create(), m[0], m[1])),
