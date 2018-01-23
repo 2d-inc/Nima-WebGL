@@ -51,6 +51,7 @@ export default class Graphics
 				_ViewportHeight = height;
 				mat4.ortho(_Projection, 0, _ViewportWidth, 0, _ViewportHeight, 0, 1);
 				_GL.viewport(0, 0, _ViewportWidth, _ViewportHeight);
+				_ViewDirty = true;
 				return true;
 			}
 			return false;
@@ -738,6 +739,11 @@ export default class Graphics
 			_ViewTransform = view;
 			_ViewDirty = true;
 		};
+
+		this.__defineGetter__("projection", function()
+		{
+			return _Projection;
+		});
 
 		this.__defineGetter__("viewportWidth", function()
 		{
