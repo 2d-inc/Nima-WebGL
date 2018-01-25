@@ -334,12 +334,15 @@ export default class Animation
 						component._IsCollisionEnabled = value;
 						break;
 					case AnimatedProperty.Properties.Sequence:
-						var frameIndex = Math.floor(value)%component._SequenceFrames.length;
-						if(frameIndex < 0)
+						if(component._SequenceFrames)
 						{
-							frameIndex += component._SequenceFrames.length;
+							var frameIndex = Math.floor(value)%component._SequenceFrames.length;
+							if(frameIndex < 0)
+							{
+								frameIndex += component._SequenceFrames.length;
+							}
+							component._SequenceFrame = frameIndex;
 						}
-						component._SequenceFrame = frameIndex;
 						break;
 
 					case AnimatedProperty.Properties.ActiveChildIndex:
