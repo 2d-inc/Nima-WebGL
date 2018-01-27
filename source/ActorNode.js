@@ -119,6 +119,22 @@ export default class ActorNode extends ActorComponent
 		this.markTransformDirty();
 	}
 
+	get scale()
+	{
+		return this._Scale;
+	}
+
+	set scale(t)
+	{
+		if(vec2.exactEquals(this._Scale, t))
+		{
+			return;
+		}
+
+		vec2.copy(this._Scale, t);
+		this.markTransformDirty();
+	}
+
 	get x()
 	{
 		return this._Translation[0];
