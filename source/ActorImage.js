@@ -18,6 +18,7 @@ export default class ActorImage extends ActorNode
 		this._ConnectedBones = null;
 		this._BoneMatrices = null;
 		this._IsInstance = false;
+		this._IsHidden = false;
 
 		this._VertexBuffer = null;
 		this._IndexBuffer = null;
@@ -27,6 +28,16 @@ export default class ActorImage extends ActorNode
 		this._SequenceFrame = 0;
 		this._SequenceUVs = null;
 		this._SequenceUVBuffer = null;
+	}
+
+	get isHidden()
+	{
+		return this._IsHidden;
+	}
+
+	set isHidden(hidden)
+	{
+		this._IsHidden = hidden;
 	}
 
 	get hasVertexDeformAnimation()
@@ -281,7 +292,7 @@ export default class ActorImage extends ActorNode
 
 	draw(graphics)
 	{
-		if(this._RenderCollapsed)
+		if(this._RenderCollapsed || this._IsHidden)
 		{
 			return;
 		}
