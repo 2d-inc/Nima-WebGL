@@ -262,7 +262,7 @@ export default class ActorNode extends ActorComponent
 			{
 				if((this._DirtMask & TransformDirty) !== TransformDirty)
 				{
-					item.updateTransform();
+					_UpdateTransform(this);
 				}
 				if((this._DirtMask & WorldTransformDirty) !== WorldTransformDirty)
 				{
