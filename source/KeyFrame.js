@@ -1,5 +1,8 @@
 import BezierAnimationCurve from "./BezierAnimationCurve.js";
 
+const MAX_FACTOR = 0.99999;
+const MIN_FACTOR = 1.0-MAX_FACTOR;
+
 export default class KeyFrame
 {
 	constructor()
@@ -33,8 +36,8 @@ export default class KeyFrame
 		else
 		{
 			var timeRange = nxt._Time - this._Time;
-			var outTime = this._Time + timeRange * this._OutFactor;
-			var inTime = nxt._Time - timeRange * nxt._InFactor;
+			var outTime = this._Time + timeRange * Math.max(MIN_FACTOR, Math.min(MAX_FACTOR, this._OutFactor));
+			var inTime = nxt._Time - timeRange * Math.max(MIN_FACTOR, Math.min(MAX_FACTOR, nxt._InFactor));
 
 			this._Curve = new BezierAnimationCurve([this._Time, this._Value], [outTime, this._OutValue], [inTime, nxt._InValue], [nxt._Time, nxt._Value]);
 			this.interpolate = KeyFrame.prototype.interpolateCurve;
