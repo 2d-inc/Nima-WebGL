@@ -13,18 +13,18 @@ function yFromT(t, E, F, G, H)
 // http://stackoverflow.com/questions/27176423/function-to-solve-cubic-equation-analytically
 function solveCubic(a, b, c, d) 
 {
-	if (Math.abs(a) < 1e-8) 
+	if (Math.abs(a) < Number.EPSILON) 
 	{ 
 		// Quadratic case, ax^2+bx+c=0
 		a = b; 
 		b = c; 
 		c = d;
-		if (Math.abs(a) < 1e-8) 
+		if (Math.abs(a) < Number.EPSILON) 
 		{ 
 			// Linear case, ax+b=0
 			a = b; 
 			b = c;
-			if (Math.abs(a) < 1e-8) // Degenerate case
+			if (Math.abs(a) < Number.EPSILON) // Degenerate case
 			{
 				return [];
 			}
@@ -32,7 +32,7 @@ function solveCubic(a, b, c, d)
 		}
 		
 		let D = b*b - 4*a*c;
-		if (Math.abs(D) < 1e-8)
+		if (Math.abs(D) < Number.EPSILON)
 			return [-b/(2*a)];
 		else if (D > 0)
 			return [(-b+Math.sqrt(D))/(2*a), (-b-Math.sqrt(D))/(2*a)];
@@ -44,12 +44,12 @@ function solveCubic(a, b, c, d)
 	let q = (2*b*b*b - 9*a*b*c + 27*a*a*d)/(27*a*a*a);
 	let roots;
 
-	if (Math.abs(p) < 1e-8) 
+	if (Math.abs(p) < Number.EPSILON) 
 	{ 
 		// p = 0 -> t^3 = -q -> t = -q^1/3
 		roots = [cuberoot(-q)];
 	} 
-	else if (Math.abs(q) < 1e-8) 
+	else if (Math.abs(q) < Number.EPSILON) 
 	{ 
 		// q = 0 -> t^3 + pt = 0 -> t(t^2+p)=0
 		roots = [0].concat(p < 0 ? [Math.sqrt(-p), -Math.sqrt(-p)] : []);
@@ -57,7 +57,7 @@ function solveCubic(a, b, c, d)
 	else 
 	{
 		let D = q*q/4 + p*p*p/27;
-		if (Math.abs(D) < 1e-8) 
+		if (Math.abs(D) < Number.EPSILON) 
 		{       // D = 0 -> two roots
 			roots = [-1.5*q/p, 3*q/p];
 		} 
