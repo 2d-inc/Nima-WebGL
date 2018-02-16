@@ -25,7 +25,7 @@ export default class ActorIKTarget extends ActorNode
 		let bones = this._InfluencedBones;
 		constraint._Actor = this._Actor;
 		constraint._TargetIdx = this._Idx;
-		constraint._ParentIdx = bones[bones.length-1];
+		constraint._ParentIdx = bones ? bones[bones.length-1] : -1;
 		constraint._InvertDirection = this._InvertDirection;
 		constraint._InfluencedBones = bones;
 		constraint._Strength = this._Strength;
