@@ -30,6 +30,11 @@ export default class AnimationInstance extends Dispatcher
 		return this._Time;
 	}
 
+	get isOver()
+	{
+		return this._Time >= this._Max;
+	}
+
 	set time(newTime)
 	{
 		var delta = newTime - this._Time;
@@ -58,6 +63,11 @@ export default class AnimationInstance extends Dispatcher
 			}
 		}
 		this._Time = time;
+	}
+
+	reset()
+	{
+		this._Time = 0.0;
 	}
 
 	advance(seconds)
@@ -116,6 +126,8 @@ export default class AnimationInstance extends Dispatcher
 			this._Actor.dispatch("animationEvent", event);
 		}
 		this._Time = time;
+
+		return triggeredEvents;
 	}
 
 	apply(actor, mix)

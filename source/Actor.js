@@ -2,7 +2,6 @@ import Dispatcher from "./Dispatcher.js";
 import ActorNode from "./ActorNode.js";
 import ActorImage from "./ActorImage.js";
 import NestedActorNode from "./NestedActorNode.js";
-import ActorIKTarget from "./ActorIKTarget.js";
 import AnimationInstance from "./AnimationInstance.js";
 
 export default class Actor extends Dispatcher
@@ -17,8 +16,8 @@ export default class Actor extends Dispatcher
 		this._Drawables = [];
 		this._Atlases = [];
 		this._RootNode = new ActorNode();
+		this._RootNode._Name = "Root";
 		this._Components.push(this._RootNode);
-		this._Nodes.push(this._RootNode);
 		this._Animations = [];
 		this._IsInstance = false;
 		this._IsImageSortDirty = false;

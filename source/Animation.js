@@ -41,6 +41,11 @@ export default class Animation
 		this._Loop = false;
 	}
 
+	get duration()
+	{
+		return this._Duration;
+	}
+
 	triggerEvents(actorComponents, fromTime, toTime, triggered)
 	{
 		let keyedTriggerComponents = this._TriggerComponents;
