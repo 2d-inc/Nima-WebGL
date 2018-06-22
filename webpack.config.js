@@ -17,14 +17,14 @@ var config =
 	devtool:"source-map",
 	module :
 	{
-	loaders :
-	[
-		{
-			test : /\.js?/,
-			include : APP_DIR,
-			loader : "babel-loader"
-		}
-	]
+		loaders :
+		[
+			{
+				test : /\.js?/,
+				include : APP_DIR,
+				loader : "babel-loader"
+			}
+		]
 	}
 };
 

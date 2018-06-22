@@ -1129,4 +1129,9 @@ export default class ActorLoader
 			fileReader.readAsArrayBuffer(url);
 		}
 	}
+
+	loadFromData(data, callback)
+	{
+		_ReadShot(this, data, callback);
+	}
 }
