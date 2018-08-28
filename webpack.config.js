@@ -1,12 +1,18 @@
-var webpack = require("webpack");
-var path = require("path");
+const webpack = require("webpack");
+const path = require("path");
 
-var BUILD_DIR = path.resolve(__dirname, "build/");
-var APP_DIR = path.resolve(__dirname, "source/");
+const BUILD_DIR = path.resolve(__dirname, "build/");
+const APP_DIR = path.resolve(__dirname, "source/");
 
-var config =
+const config =
 {
-	entry: APP_DIR + "/Nima.js",
+	mode: "development",
+	target: "web",
+	devtool: "source-map",
+	entry:
+	{
+		Nima: APP_DIR + "/Nima.js"
+	},	
 	output:
 	{
 		path: BUILD_DIR,
@@ -14,15 +20,16 @@ var config =
 		library: "Nima",
 		libraryTarget: "umd"
 	},
-	devtool:"source-map",
 	module :
 	{
-		loaders :
+		rules:
 		[
 			{
 				test : /\.js?/,
-				include : APP_DIR,
-				loader : "babel-loader"
+				use:
+				{
+					loader : "babel-loader"
+				}
 			}
 		]
 	}
