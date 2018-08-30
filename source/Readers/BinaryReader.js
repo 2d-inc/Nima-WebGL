@@ -1,7 +1,10 @@
-export default class BinaryReader
+import StreamReader from "./StreamReader.js";
+
+export default class BinaryReader extends StreamReader
 {
 	constructor(uint8Array)
 	{
+		super();
 		this.isBigEndian = function()
 		{
 			var b = new ArrayBuffer(4);
@@ -23,7 +26,7 @@ export default class BinaryReader
 		return v;
 	}
 
-	readFloat32Array(ar, length, offset)
+	readFloat32ArrayOffset(ar, length, offset)
 	{
 		if(!offset)
 		{
@@ -41,6 +44,16 @@ export default class BinaryReader
 		}
 		return ar;
 	}
+	
+	readFloat32Array(ar)
+	{
+		for (let i = 0; i < ar.length; i++)
+		{
+			ar[i] = this.dataView.getFloat32(this.readIndex, !this.isBigEndian);
+			this.readIndex += 4;
+		}
+		return ar;
+	}
 
 	readFloat64()
 	{
@@ -49,9 +62,19 @@ export default class BinaryReader
 		return v;
 	}
 
+	readUint32length()
+	{
+		return this.readUint32();
+	}
+
 	readUint8()
 	{
 		return this.raw[this.readIndex++];
+	}
+
+	readUint8Length() 
+	{
+		return this.readUint8();
 	}
 
 	isEOF()
@@ -92,6 +115,11 @@ export default class BinaryReader
 		var v = this.dataView.getInt16(this.readIndex, !this.isBigEndian);
 		this.readIndex += 2;
 		return v;
+	}
+
+	readUint16Length()
+	{
+		return this.readUint16();
 	}
 
 	readUint32()
@@ -165,6 +193,19 @@ export default class BinaryReader
 			to[i] = this.raw[this.readIndex++];
 		}
 	}
+
+	readBool()
+	{
+		return this.readUint8() === 1;
+	}
+
+	readBlockType() 
+	{
+		return this.readUint8();
+	}
+
+	get containerType() { return "bin"; }
+
 }
 
 BinaryReader.alignment = 1024;

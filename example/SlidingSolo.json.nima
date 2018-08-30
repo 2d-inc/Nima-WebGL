@@ -1,0 +1,638 @@
+{
+	"version": 15,
+	"Nodes": [
+		{
+			"name": "Solo",
+			"translation": [
+				-16,
+				133.5
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"activeChild": 2,
+			"type": "ActorNodeSolo"
+		},
+		{
+			"name": "First Child",
+			"parentId": 0,
+			"translation": [
+				92,
+				-168
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": true,
+			"type": "ActorRootBone"
+		},
+		{
+			"name": "Skater-idle-74",
+			"parentId": 1,
+			"translation": [
+				-5.5,
+				-14
+			],
+			"rotation": 0,
+			"scale": [
+				0.5,
+				0.5
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"isVisible": true,
+			"blendMode": 0,
+			"drawOrder": 1,
+			"atlas": 0,
+			"ConnectedBones": [],
+			"numVertices": 4,
+			"vertices": [
+				-256,
+				-334,
+				0.0009765625,
+				0.32666015625,
+				256,
+				-334,
+				0.5009765625,
+				0.32666015625,
+				256,
+				334,
+				0.5009765625,
+				0.00048828125,
+				-256,
+				334,
+				0.0009765625,
+				0.00048828125
+			],
+			"numTriangles": 2,
+			"triangles": [
+				0,
+				1,
+				2,
+				2,
+				3,
+				0
+			],
+			"type": "ActorImage"
+		},
+		{
+			"name": "Second Child",
+			"parentId": 0,
+			"translation": [
+				-76,
+				-166
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"type": "ActorRootBone"
+		},
+		{
+			"name": "Skater-idle-00",
+			"parentId": 3,
+			"translation": [
+				4.5,
+				-18
+			],
+			"rotation": 0,
+			"scale": [
+				0.5,
+				0.5
+			],
+			"opacity": 0,
+			"isCollapsedVisibility": false,
+			"isVisible": true,
+			"blendMode": 0,
+			"drawOrder": 2,
+			"atlas": 0,
+			"ConnectedBones": [],
+			"numVertices": 4,
+			"vertices": [
+				-256,
+				-334,
+				0.0009765625,
+				0.65380859375,
+				256,
+				-334,
+				0.5009765625,
+				0.65380859375,
+				256,
+				334,
+				0.5009765625,
+				0.32763671875,
+				-256,
+				334,
+				0.0009765625,
+				0.32763671875
+			],
+			"numTriangles": 2,
+			"triangles": [
+				0,
+				1,
+				2,
+				2,
+				3,
+				0
+			],
+			"type": "ActorImage"
+		},
+		{
+			"name": "Big",
+			"translation": [
+				395.6123962402344,
+				40.85914993286133
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"type": "ActorRootBone"
+		},
+		{
+			"name": "Skater-idle-00",
+			"parentId": 5,
+			"translation": [
+				-513.5510864257812,
+				-366.4914855957031
+			],
+			"rotation": 0,
+			"scale": [
+				0.30000001192092896,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"isVisible": true,
+			"blendMode": 0,
+			"drawOrder": 3,
+			"atlas": 0,
+			"ConnectedBones": [],
+			"numVertices": 4,
+			"vertices": [
+				-256,
+				-334,
+				0.0009765625,
+				0.65380859375,
+				256,
+				-334,
+				0.5009765625,
+				0.65380859375,
+				256,
+				334,
+				0.5009765625,
+				0.32763671875,
+				-256,
+				334,
+				0.0009765625,
+				0.32763671875
+			],
+			"numTriangles": 2,
+			"triangles": [
+				0,
+				1,
+				2,
+				2,
+				3,
+				0
+			],
+			"type": "ActorImage"
+		},
+		{
+			"name": "Small",
+			"translation": [
+				-352.4108581542969,
+				93.85660552978516
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"type": "ActorRootBone"
+		},
+		{
+			"name": "Skater-idle-74",
+			"parentId": 7,
+			"translation": [
+				-136.14553833007812,
+				-127.89053344726562
+			],
+			"rotation": 0,
+			"scale": [
+				1,
+				1
+			],
+			"opacity": 1,
+			"isCollapsedVisibility": false,
+			"isVisible": true,
+			"blendMode": 0,
+			"drawOrder": 4,
+			"atlas": 0,
+			"ConnectedBones": [],
+			"numVertices": 4,
+			"vertices": [
+				-256,
+				-334,
+				0.0009765625,
+				0.32666015625,
+				256,
+				-334,
+				0.5009765625,
+				0.32666015625,
+				256,
+				334,
+				0.5009765625,
+				0.00048828125,
+				-256,
+				334,
+				0.0009765625,
+				0.00048828125
+			],
+			"numTriangles": 2,
+			"triangles": [
+				0,
+				1,
+				2,
+				2,
+				3,
+				0
+			],
+			"type": "ActorImage"
+		},
+		{
+			"name": "Transform Constraint",
+			"parentId": 8,
+			"strength": 0.3,
+			"isEnabled": true,
+			"targetId": 7,
+			"sourceSpaceId": 1,
+			"destSpaceId": 1,
+			"type": "ActorTransformConstraint"
+		}
+	],
+	"Animations": [
+		{
+			"name": "Constraint",
+			"fps": 60,
+			"duration": 2,
+			"isLooping": true,
+			"KeyedNodes": [
+				{
+					"index": 7,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": -513.5510864257812
+								},
+								{
+									"time": 0.5333333333333333,
+									"type": 1,
+									"value": 82.44354248046875
+								},
+								{
+									"time": 1.9833333333333334,
+									"type": 1,
+									"value": -513.5510864257812
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": -366.4914855957031
+								},
+								{
+									"time": 1.9833333333333334,
+									"type": 1,
+									"value": -366.4914855957031
+								}
+							],
+							"type": "framePosY"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": 0
+								},
+								{
+									"time": 1.0833333333333333,
+									"type": 1,
+									"value": -1.879670594430754
+								},
+								{
+									"time": 1.9833333333333334,
+									"type": 1,
+									"value": 0
+								}
+							],
+							"type": "frameRotation"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": 0.30000001192092896
+								},
+								{
+									"time": 1.5833333333333333,
+									"type": 1,
+									"value": 0.2999999225139618
+								},
+								{
+									"time": 1.9833333333333334,
+									"type": 1,
+									"value": 0.30000001192092896
+								}
+							],
+							"type": "frameScaleX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": 1
+								},
+								{
+									"time": 1.5833333333333333,
+									"type": 1,
+									"value": 0.22674916684627533
+								},
+								{
+									"time": 1.9833333333333334,
+									"type": 1,
+									"value": 1
+								}
+							],
+							"type": "frameScaleY"
+						}
+					]
+				},
+				{
+					"index": 9,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 1.5833333333333333,
+									"type": 1,
+									"value": -103.14553833007812
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 1.5833333333333333,
+									"type": 1,
+									"value": -77.89053344726562
+								}
+							],
+							"type": "framePosY"
+						}
+					]
+				}
+			],
+			"animationStart": 0,
+			"animationEnd": 1.9833333333333334,
+			"type": "Animation"
+		},
+		{
+			"name": "Solo Skater",
+			"fps": 60,
+			"duration": 10,
+			"isLooping": true,
+			"KeyedNodes": [
+				{
+					"index": 1,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"value": 2
+								},
+								{
+									"time": 0.8166666666666667,
+									"value": 1
+								}
+							],
+							"type": "frameActiveChild"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 1.15,
+									"type": 1,
+									"value": -14
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 1.15,
+									"type": 1,
+									"value": 168.5
+								}
+							],
+							"type": "framePosY"
+						}
+					]
+				}
+			],
+			"animationStart": 0,
+			"animationEnd": 1.15,
+			"type": "Animation"
+		},
+		{
+			"name": "Useless",
+			"fps": 60,
+			"duration": 3,
+			"isLooping": true,
+			"KeyedNodes": [
+				{
+					"index": 1,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"value": 1
+								},
+								{
+									"time": 1.5,
+									"value": 2
+								},
+								{
+									"time": 2.9833333333333334,
+									"value": 1
+								}
+							],
+							"type": "frameActiveChild"
+						}
+					]
+				}
+			],
+			"animationStart": 0,
+			"animationEnd": 2.9833333333333334,
+			"type": "Animation"
+		},
+		{
+			"name": "Slide",
+			"fps": 60,
+			"duration": 3,
+			"isLooping": true,
+			"KeyedNodes": [
+				{
+					"index": 1,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": -14
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"type": 1,
+									"value": 168.5
+								}
+							],
+							"type": "framePosY"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0,
+									"value": 2
+								},
+								{
+									"time": 1.4444444444444444,
+									"value": 1
+								}
+							],
+							"type": "frameActiveChild"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 1.05,
+									"type": 1,
+									"value": 0.54
+								}
+							],
+							"type": "frameOpacity"
+						}
+					]
+				},
+				{
+					"index": 2,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 0.8,
+									"type": 1,
+									"value": 292
+								},
+								{
+									"time": 1.7,
+									"type": 1,
+									"value": 22
+								},
+								{
+									"time": 2.65,
+									"type": 1,
+									"value": 292
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 0.8,
+									"type": 1,
+									"value": -168
+								},
+								{
+									"time": 1.7,
+									"type": 1,
+									"value": -172
+								},
+								{
+									"time": 2.65,
+									"type": 1,
+									"value": -168
+								}
+							],
+							"type": "framePosY"
+						}
+					]
+				},
+				{
+					"index": 3,
+					"Properties": [
+						{
+							"KeyFrames": [
+								{
+									"time": 1.6,
+									"type": 1,
+									"value": 4.5
+								}
+							],
+							"type": "framePosX"
+						},
+						{
+							"KeyFrames": [
+								{
+									"time": 1.6,
+									"type": 1,
+									"value": 20
+								}
+							],
+							"type": "framePosY"
+						}
+					]
+				}
+			],
+			"animationStart": 0,
+			"animationEnd": 2.65,
+			"type": "Animation"
+		}
+	]
+}
