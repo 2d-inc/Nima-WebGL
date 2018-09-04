@@ -62,7 +62,7 @@ export default class BinaryReader extends StreamReader
 		return v;
 	}
 
-	readUint32length()
+	readUint32Length()
 	{
 		return this.readUint32();
 	}

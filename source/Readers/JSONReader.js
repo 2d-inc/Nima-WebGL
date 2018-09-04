@@ -99,10 +99,11 @@ export default class JSONReader extends StreamReader
         return this.readProp(label);
     }
 
-	readInt32(label)
-	{
-        return this.readProp(label);
-    }
+	// This implementation doesn't need this, as it would read a wrong value.
+	// readUint32Length(label)
+	// {
+    //     return this.readProp(label);
+    // }
 
 	byteArrayToString(bytes)
 	{

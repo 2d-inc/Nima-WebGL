@@ -117,8 +117,7 @@ function _ReadNextBlock(reader, error, typesList)
 
 function _ReadComponentsBlock(actor, reader)
 {
-	let componentCount = reader.readUint16Length();
-	let actorComponents = actor._Components;
+	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 
 	// Guaranteed from the exporter to be in index order.
@@ -204,6 +203,11 @@ function _ReadComponentsBlock(actor, reader)
 		if(component)
 		{
 			component._Idx = actorComponents.length;
+			if(actor.dataVersion >= 15)
+			{
+				const pidx = component._ParentIdx;
+				component._ParentIdx = pidx !== undefined ? pidx+1 : 0;
+			}
 		}
 		actorComponents.push(component);
 	}
@@ -231,7 +235,11 @@ function _ReadAnimationBlock(actor, reader)
 		for(let i = 0; i < numKeyedComponents; i++)
 		{
 			reader.openObject("Node");
-			const componentIndex = reader.readUint16("index");
+			let componentIndex = reader.readUint16("nodeIndex");
+			if(actor.dataVersion >= 15)
+			{
+				componentIndex += 1;
+			}
 			let component = actor._Components[componentIndex];
 			if(!component)
 			{
@@ -281,24 +289,24 @@ function _ReadAnimationBlock(actor, reader)
 					let validProperty = false;
 					switch(propertyType)
 					{
-						case AnimatedProperty.Properties.framePosX:
-						case AnimatedProperty.Properties.framePosY:
-						case AnimatedProperty.Properties.frameScaleX:
-						case AnimatedProperty.Properties.frameScaleY:
-						case AnimatedProperty.Properties.frameRotation:
-						case AnimatedProperty.Properties.frameOpacity:
-						case AnimatedProperty.Properties.frameDrawOrder:
-						case AnimatedProperty.Properties.frameLength:
-						case AnimatedProperty.Properties.frameVertices:
-						case AnimatedProperty.Properties.frameStrength:
-						case AnimatedProperty.Properties.frameTrigger:
-						case AnimatedProperty.Properties.frameIntValue:
-						case AnimatedProperty.Properties.frameFloatValue:
-						case AnimatedProperty.Properties.frameStringValue:
-						case AnimatedProperty.Properties.frameBooleanValue:
-						case AnimatedProperty.Properties.frameIsCollisionEnabled:
-						case AnimatedProperty.Properties.frameSequence:
-						case AnimatedProperty.Properties.frameActiveChild:
+						case AnimatedProperty.Properties.PosX:
+						case AnimatedProperty.Properties.PosY:
+						case AnimatedProperty.Properties.ScaleX:
+						case AnimatedProperty.Properties.ScaleY:
+						case AnimatedProperty.Properties.Rotation:
+						case AnimatedProperty.Properties.Opacity:
+						case AnimatedProperty.Properties.DrawOrder:
+						case AnimatedProperty.Properties.Length:
+						case AnimatedProperty.Properties.VertexDeform:
+						case AnimatedProperty.Properties.ConstraintStrength:
+						case AnimatedProperty.Properties.Trigger:
+						case AnimatedProperty.Properties.IntProperty:
+						case AnimatedProperty.Properties.FloatProperty:
+						case AnimatedProperty.Properties.StringProperty:
+						case AnimatedProperty.Properties.BooleanProperty:
+						case AnimatedProperty.Properties.IsCollisionEnabled:
+						case AnimatedProperty.Properties.Sequence:
+						case AnimatedProperty.Properties.ActiveChildIndex:
 							validProperty = true;
 							break;
 						default:
@@ -326,12 +334,12 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							switch(propertyType)
 							{
-								case AnimatedProperty.Properties.frameIsCollisionEnabled:
-								case AnimatedProperty.Properties.frameBooleanProperty:
-								case AnimatedProperty.Properties.frameStringProperty:
-								case AnimatedProperty.Properties.frameTrigger:
-								case AnimatedProperty.Properties.frameDrawOrder:
-								case AnimatedProperty.Properties.frameActiveChildIndex:
+								case AnimatedProperty.Properties.IsCollisionEnabled:
+								case AnimatedProperty.Properties.BooleanProperty:
+								case AnimatedProperty.Properties.StringProperty:
+								case AnimatedProperty.Properties.Trigger:
+								case AnimatedProperty.Properties.DrawOrder:
+								case AnimatedProperty.Properties.ActiveChildIndex:
 									// These do not interpolate.
 									break;
 								default:
@@ -361,23 +369,23 @@ function _ReadAnimationBlock(actor, reader)
 							}
 						}
 
-						if(propertyType === AnimatedProperty.Properties.frameTrigger)
+						if(propertyType === AnimatedProperty.Properties.Trigger)
 						{
 							// No value on keyframe.
 						}
-						else if(propertyType === AnimatedProperty.Properties.frameIntProperty)
+						else if (propertyType === AnimatedProperty.Properties.IntProperty)
 						{
 							keyFrame._Value = propertyReader.readInt32("value");
 						}
-						else if(propertyType === AnimatedProperty.Properties.frameStringProperty)
+						else if (propertyType === AnimatedProperty.Properties.StringProperty)
 						{
 							keyFrame._Value = propertyReader.readString("value");
 						}
-						else if(propertyType === AnimatedProperty.Properties.frameBooleanProperty || propertyType === AnimatedProperty.Properties.frameIsCollisionEnabled)
+						else if (propertyType === AnimatedProperty.Properties.BooleanProperty || propertyType === AnimatedProperty.Properties.IsCollisionEnabled)
 						{
 							keyFrame._Value = propertyReader.readBool("value");
 						}
-						else if(propertyType === AnimatedProperty.Properties.frameDrawOrder)
+						else if (propertyType === AnimatedProperty.Properties.DrawOrder)
 						{
 							propertyReader.openArray("drawOrder");
 							const orderedImages = propertyReader.readUint16Length();
@@ -396,7 +404,7 @@ function _ReadAnimationBlock(actor, reader)
 							propertyReader.closeArray();
 							keyFrame._Value = orderValue;
 						}
-						else if(propertyType === AnimatedProperty.Properties.frameVertices)
+						else if (propertyType === AnimatedProperty.Properties.VertexDeform)
 						{
 							keyFrame._Value = new Float32Array(component._NumVertices * 2);
 							component.hasVertexDeformAnimation = true;
@@ -447,12 +455,12 @@ function _ReadAnimationBlock(actor, reader)
 									break;
 							}
 						}
-						if(propertyType === AnimatedProperty.Properties.DrawOrder)
+						if (propertyType === AnimatedProperty.Properties.DrawOrder)
 						{
 							// Always hold draw order.
 							keyFrame._Type = KeyFrame.Type.Hold;
 						}
-						else if(propertyType === AnimatedProperty.Properties.VertexDeform)
+						else if (propertyType === AnimatedProperty.Properties.VertexDeform)
 						{
 							keyFrame._Type = KeyFrame.Type.Linear;
 						}
@@ -536,6 +544,8 @@ function _BuildJpegAtlas(atlas, img, imga, callback)
     let imageDataRGB = ctx.getImageData(0,0,canvas.width, canvas.height);
     let dataRGB = imageDataRGB.data;
 
+	if(imga)
+	{
     let canvasAlpha = document.createElement("canvas");
 	canvasAlpha.width = img.width;
     canvasAlpha.height = img.height;
@@ -554,6 +564,7 @@ function _BuildJpegAtlas(atlas, img, imga, callback)
         widx+=4;
     }
     ctx.putImageData(imageDataRGB, 0, 0);
+	}
 
     let atlasImage = new Image();
 	atlasImage.src = canvas.toDataURL();
@@ -592,11 +603,10 @@ function _JpegAtlas(dataRGB, dataAlpha, callback)
 	imga.src = URL.createObjectURL(dataAlpha);
 }
 
-// TODO: 
 function _ReadAtlasesBlock(actor, reader, callback)
 {
 	// Read atlases.
-	let numAtlases = reader.readUint16();
+	const numAtlases = reader.readUint16Length();
 
 	let waitCount = 0;
 	let loadedCount = 0;
@@ -609,23 +619,50 @@ function _ReadAtlasesBlock(actor, reader, callback)
 		}
 	}
 
+	const readerType = reader.containerType;
+
 	for(let i = 0; i < numAtlases; i++)
 	{
+		if(readerType === "json")
+		{
+			const b64img = reader.readString();
+			waitCount++;
+			// Build PNG Atlas
+			const img = document.createElement("img");
+			const atlas = {};
+			img.onload = function()
+			{
+				atlas.img = this;
+				loaded();
+			};
+			actor._Atlases.push(atlas);
+			img.src = b64img;
+		}
+		else if (readerType === "bin")
+		{
+			if(actor.dataVersion <= 14)
+			{
 		let size = reader.readUint32();
-		let atlasDataRGB = new Uint8Array(size);
+				const atlasDataRGB = new Uint8Array(size);
 		reader.readRaw(atlasDataRGB, atlasDataRGB.length);
 
 		size = reader.readUint32();
-		let atlasDataAlpha = new Uint8Array(size);
+				const atlasDataAlpha = new Uint8Array(size);
 		reader.readRaw(atlasDataAlpha, atlasDataAlpha.length);
 
-		let rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
-		let alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});
+				const rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
+				const alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});
 
 		waitCount++;
-		let atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
+				const atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
 
 		actor._Atlases.push(atlas);//new Blob([atlasDataRGB], {type: "image/jpeg"}));
+	}
+			else
+			{
+				// TODO:
+			}
+		}
 	}
 
 	// Return true if we are waiting for atlases
@@ -720,8 +757,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	const pId = reader.readUint16("parentId");
-	component._ParentIdx = pId ? pId : 0;
+	component._ParentIdx = reader.readUint16("parentId");
 	return component;
 }
 
