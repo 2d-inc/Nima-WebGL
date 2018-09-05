@@ -280,7 +280,7 @@
 			"parentId": 8,
 			"strength": 0.3,
 			"isEnabled": true,
-			"targetId": 7,
+			"targetId": 6,
 			"sourceSpaceId": 1,
 			"destSpaceId": 1,
 			"type": "ActorTransformConstraint"

@@ -119,6 +119,7 @@ function _ReadComponentsBlock(actor, reader)
 {
 	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
+	_ReadActorTargetedConstraint = actor.dataVersion >= 15 ? _ReadActorTargetedConstraint15 : _ReadActorTargetedConstraint14;
 
 	// Guaranteed from the exporter to be in index order.
 	let block = null;
@@ -951,7 +952,17 @@ function _ReadActorConstraint(reader, component)
 	component._IsEnabled = reader.readBool("isEnabled");
 }
 
-function _ReadActorTargetedConstraint(reader, component)
+let _ReadActorTargetedConstraint = null;
+
+// From version 15 on indices are different.
+function _ReadActorTargetedConstraint15(reader, component)
+{
+	_ReadActorConstraint(reader, component);
+
+	component._TargetIdx = reader.readUint16("targetId") + 1;
+}
+
+function _ReadActorTargetedConstraint14(reader, component)
 {
 	_ReadActorConstraint(reader, component);
 
