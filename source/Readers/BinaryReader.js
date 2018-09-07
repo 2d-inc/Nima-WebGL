@@ -204,6 +204,11 @@ export default class BinaryReader extends StreamReader
 		return this.readUint8();
 	}
 
+	readParentId()
+	{
+		return this.readUint16();
+	}
+
 	get containerType() { return "bin"; }
 
 }

@@ -92,7 +92,6 @@ function _ReadNextBlock(reader, error, typesList)
 	const streamReader = _Readers[cType];
 	try
 	{
-		// blockType = reader.readUint8();
 		blockType = reader.readBlockType(typesList);
 		if(blockType === undefined)
 		{
@@ -117,11 +116,12 @@ function _ReadNextBlock(reader, error, typesList)
 
 function _ReadComponentsBlock(actor, reader)
 {
+	// The Binary Format is guaranteed from the exporter to be in index order.
+	const numNodes = reader.readUint16Length(); // Necessary to avoid misalignment on Binary Reader.
 	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 	_ReadActorTargetedConstraint = actor.dataVersion >= 15 ? _ReadActorTargetedConstraint15 : _ReadActorTargetedConstraint14;
 
-	// Guaranteed from the exporter to be in index order.
 	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
 	{
@@ -204,11 +204,6 @@ function _ReadComponentsBlock(actor, reader)
 		if(component)
 		{
 			component._Idx = actorComponents.length;
-			if(actor.dataVersion >= 15)
-			{
-				const pidx = component._ParentIdx;
-				component._ParentIdx = pidx !== undefined ? pidx+1 : 0;
-			}
 		}
 		actorComponents.push(component);
 	}
@@ -500,7 +495,7 @@ function _ReadAnimationBlock(actor, reader)
 
 function _ReadAnimationsBlock(actor, reader)
 {
-	// let animationsCount = reader.readUint16(); TODO: remove, unneeded?
+	const animationsCount = reader.readUint16Length(); // Align the block reader when Binary.
 	let block = null;
 	// The animations block only contains a list of animations, so we don't need to track how many we've read in.
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
@@ -522,7 +517,7 @@ function _ReadNestedActorAssetBlock(actor, reader)
 
 function _ReadNestedActorAssets(actor, reader)
 {
-	let nestedActorCount = reader.readUint16();
+	const nestedActorCount = reader.readUint16();
 	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
 	{
@@ -537,38 +532,40 @@ function _ReadNestedActorAssets(actor, reader)
 
 function _BuildJpegAtlas(atlas, img, imga, callback)
 {
-	let canvas = document.createElement("canvas");
+	const canvas = document.createElement("canvas");
 	canvas.width = img.width;
     canvas.height = img.height;
-    let ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, img.width, img.height);
-    let imageDataRGB = ctx.getImageData(0,0,canvas.width, canvas.height);
-    let dataRGB = imageDataRGB.data;
-
+	
 	if(imga)
 	{
-    let canvasAlpha = document.createElement("canvas");
-	canvasAlpha.width = img.width;
-    canvasAlpha.height = img.height;
-    let actx = canvasAlpha.getContext("2d");
-    actx.drawImage(imga, 0, 0, imga.width, imga.height);
+		const imageDataRGB = ctx.getImageData(0,0,canvas.width, canvas.height);
+		const dataRGB = imageDataRGB.data;
+		const canvasAlpha = document.createElement("canvas");
+		canvasAlpha.width = img.width;
+		canvasAlpha.height = img.height;
+		const actx = canvasAlpha.getContext("2d");
+		actx.drawImage(imga, 0, 0, imga.width, imga.height);
 
-    let imageDataAlpha = actx.getImageData(0,0,canvasAlpha.width, canvasAlpha.height);
-    let dataAlpha = imageDataAlpha.data;
+		const imageDataAlpha = actx.getImageData(0,0,canvasAlpha.width, canvasAlpha.height);
+		const dataAlpha = imageDataAlpha.data;
 
-    let pixels = dataAlpha.length/4;
-    let widx = 3;
+		const pixels = dataAlpha.length/4;
+		let widx = 3;
 
-    for(let j = 0; j < pixels; j++)
-    {
-        dataRGB[widx] = dataAlpha[widx-1];
-        widx+=4;
-    }
-    ctx.putImageData(imageDataRGB, 0, 0);
+		for(let j = 0; j < pixels; j++)
+		{
+			dataRGB[widx] = dataAlpha[widx-1];
+			widx+=4;
+		}
+		ctx.putImageData(imageDataRGB, 0, 0);
 	}
 
-    let atlasImage = new Image();
-	atlasImage.src = canvas.toDataURL();
+	const atlasImage = new Image();
+	const enc = canvas.toDataURL();
+	console.log("IMAGE:", enc);
+	atlasImage.src = enc;
 	atlasImage.onload = function()
 	{
 		atlas.img = this;
@@ -578,30 +575,35 @@ function _BuildJpegAtlas(atlas, img, imga, callback)
 
 function _JpegAtlas(dataRGB, dataAlpha, callback)
 {
-	let _This = this;
-	let img = document.createElement("img");
+	const _This = this;
+	const img = document.createElement("img");
+	let imga;
 	let c = 0;
+	let target = 1;
 	img.onload = function()
 	{
 		c++;
-		if(c==2)
+		if(c===target)
 		{
 			_BuildJpegAtlas(_This, img, imga, callback);
 		}
 	};
 
-	let imga = document.createElement("img");
-	imga.onload = function()
+	if(dataAlpha)
 	{
-		c++;
-		if(c==2)
+		target = 2;
+		imga = document.createElement("img");
+		imga.onload = function()
 		{
-			_BuildJpegAtlas(_This, img, imga, callback);
-		}
-	};
-
+			c++;
+			if(c===target)
+			{
+				_BuildJpegAtlas(_This, img, imga, callback);
+			}
+		};
+		imga.src = URL.createObjectURL(dataAlpha);
+	}
 	img.src = URL.createObjectURL(dataRGB);
-	imga.src = URL.createObjectURL(dataAlpha);
 }
 
 function _ReadAtlasesBlock(actor, reader, callback)
@@ -641,28 +643,23 @@ function _ReadAtlasesBlock(actor, reader, callback)
 		}
 		else if (readerType === "bin")
 		{
+			let size = reader.readUint32();
+			const atlasDataRGB = new Uint8Array(size);
+			reader.readRaw(atlasDataRGB, atlasDataRGB.length);
+			const rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
+			
+			let alphaSrc;
 			if(actor.dataVersion <= 14)
 			{
-		let size = reader.readUint32();
-				const atlasDataRGB = new Uint8Array(size);
-		reader.readRaw(atlasDataRGB, atlasDataRGB.length);
-
-		size = reader.readUint32();
+				size = reader.readUint32();
 				const atlasDataAlpha = new Uint8Array(size);
-		reader.readRaw(atlasDataAlpha, atlasDataAlpha.length);
-
-				const rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
-				const alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});
-
-		waitCount++;
-				const atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
-
-		actor._Atlases.push(atlas);//new Blob([atlasDataRGB], {type: "image/jpeg"}));
-	}
-			else
-			{
-				// TODO:
+				reader.readRaw(atlasDataAlpha, atlasDataAlpha.length);
+				alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});		
 			}
+
+			waitCount++;
+			const atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
+			actor._Atlases.push(atlas);
 		}
 	}
 
@@ -758,7 +755,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	component._ParentIdx = reader.readUint16("parentId");
+	component._ParentIdx = reader.readParentId("parentId");
 	return component;
 }
 

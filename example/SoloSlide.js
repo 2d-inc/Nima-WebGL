@@ -16,7 +16,7 @@ const SoloSlide = (function ()
 		this._SlideAnimation = null;
 		this._SoloSkaterAnimation = null;
 
-		var _This = this;
+		const _This = this;
 
 		_ScheduleAdvance(_This);
 		_Advance(_This);
@@ -146,7 +146,7 @@ const SoloSlide = (function ()
 		}
 		actor.initialize(this._Graphics);
 
-		var actorInstance = actor.makeInstance();
+		const actorInstance = actor.makeInstance();
 		actorInstance.initialize(this._Graphics);
 		
 		this._Actor = actor;
