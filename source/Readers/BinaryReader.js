@@ -96,13 +96,9 @@ export default class BinaryReader extends StreamReader
 		return v;
 	}
 
-	readUint16Array(ar, length)
+	readUint16Array(ar)
 	{
-		if (!length)
-		{
-			length = ar.length;
-		}
-		for (var i = 0; i < length; i++)
+		for (var i = 0; i < ar.length; i++)
 		{
 			ar[i] = this.dataView.getUint16(this.readIndex, !this.isBigEndian);
 			this.readIndex += 2;

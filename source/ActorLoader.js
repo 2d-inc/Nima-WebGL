@@ -564,7 +564,6 @@ function _BuildJpegAtlas(atlas, img, imga, callback)
 
 	const atlasImage = new Image();
 	const enc = canvas.toDataURL();
-	console.log("IMAGE:", enc);
 	atlasImage.src = enc;
 	atlasImage.onload = function()
 	{
