@@ -979,7 +979,7 @@ function _ReadActorIKConstraint(reader, component)
 
 		for(let i = 0; i < numInfluencedBones; i++)
 		{
-			const val = reader.readUint16(); // No need for label here either since we're clearing elements from an array.
+			const val = reader.readUint16() + 1; // No need for label here either since we're clearing elements from an array.
 			component._InfluencedBones.push(val);
 		}
 	}
@@ -1091,7 +1091,7 @@ function _ReadActorImage(reader, component)
 				reader.openObject("bone");
 				
 				const bind = mat2d.create();
-				const componentIndex = reader.readUint16("id");
+				const componentIndex = reader.readUint16("id") + 1;
 				reader.readFloat32Array(bind, "bind");
 				
 				reader.closeObject();
@@ -1102,15 +1102,20 @@ function _ReadActorImage(reader, component)
 					ibind:mat2d.invert(mat2d.create(), bind)
 				});
 			}
-
+			reader.closeArray();
+			
 			// Read the final override parent world.
+			// In JSON this is in the parent object so the array needs to be closed before.
 			const overrideWorld = mat2d.create();
 			reader.readFloat32Array(overrideWorld, "worldTransform");
 			mat2d.copy(component._WorldTransform, overrideWorld);
 			component._OverrideWorldTransform = true;
 		}
-
-		reader.closeArray();
+		else
+		{
+			// Close the JSON Array opened above.
+			reader.closeArray();
+		}
 
 		const numVertices = reader.readUint32("numVertices");
 		const vertexStride = numConnectedBones > 0 ? 12 : 4;
