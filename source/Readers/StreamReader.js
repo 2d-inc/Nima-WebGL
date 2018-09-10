@@ -23,7 +23,7 @@ export default class StreamReader
     readBool() {}
     readBlockType() {}
 
-    readParentId(label) {}
+    readId(label) {}
 
     openArray(label) {}
     closeArray() {}

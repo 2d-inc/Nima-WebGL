@@ -215,7 +215,6 @@
 			"parentId": 8,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 0,
 			"isInverted": true,
 			"InfluencedBones": [
 				6,
@@ -392,7 +391,7 @@
 			"parentId": 10,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 62,
+			"targetId": 61,
 			"isInverted": true,
 			"InfluencedBones": [
 				8,
@@ -505,7 +504,7 @@
 			"parentId": 17,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 63,
+			"targetId": 62,
 			"isInverted": true,
 			"InfluencedBones": [
 				16,
@@ -716,7 +715,7 @@
 			"parentId": 24,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 64,
+			"targetId": 63,
 			"isInverted": true,
 			"InfluencedBones": [
 				23,
@@ -910,7 +909,7 @@
 			"parentId": 30,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 3,
+			"targetId": 2,
 			"isInverted": false,
 			"InfluencedBones": [
 				29,
@@ -1023,7 +1022,7 @@
 			"parentId": 35,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 2,
+			"targetId": 1,
 			"isInverted": true,
 			"InfluencedBones": [
 				34,
@@ -1119,7 +1118,7 @@
 			"parentId": 39,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 1,
+			"targetId": 0,
 			"isInverted": true,
 			"InfluencedBones": [
 				38,
@@ -1215,7 +1214,7 @@
 			"parentId": 43,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 59,
+			"targetId": 58,
 			"isInverted": true,
 			"InfluencedBones": [
 				42,
@@ -1328,7 +1327,7 @@
 			"parentId": 48,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 60,
+			"targetId": 59,
 			"isInverted": true,
 			"InfluencedBones": [
 				47,
@@ -1424,7 +1423,7 @@
 			"parentId": 52,
 			"strength": 1,
 			"isEnabled": true,
-			"targetId": 61,
+			"targetId": 60,
 			"isInverted": false,
 			"InfluencedBones": [
 				51,

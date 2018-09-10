@@ -753,7 +753,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	component._ParentIdx = reader.readParentId("parentId");
+	component._ParentIdx = reader.readId("parentId");
 	return component;
 }
 
@@ -953,8 +953,8 @@ let _ReadActorTargetedConstraint = null;
 function _ReadActorTargetedConstraint15(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-	const tid = reader.readUint16("targetId");
-	component._TargetIdx = tid === 0 ? null : tid;
+	// const tid = reader.readUint16("targetId");
+	component._TargetIdx = reader.readId("targetId");
 }
 
 function _ReadActorTargetedConstraint14(reader, component)

@@ -200,7 +200,7 @@ export default class BinaryReader extends StreamReader
 		return this.readUint8();
 	}
 
-	readParentId()
+	readId()
 	{
 		return this.readUint16();
 	}

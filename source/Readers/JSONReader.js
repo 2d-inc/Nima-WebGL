@@ -189,7 +189,7 @@ export default class JSONReader extends StreamReader
 		return bType;
 	}
 
-	readParentId(label)
+	readId(label)
 	{
 		const val = this.readUint16(label);
 		return val !== undefined ? val+1 : 0;
