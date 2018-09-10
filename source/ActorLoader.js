@@ -622,7 +622,6 @@ function _ReadAtlasesBlock(actor, reader, callback)
 	}
 
 	const readerType = reader.containerType;
-
 	for(let i = 0; i < numAtlases; i++)
 	{
 		if(readerType === "json")
@@ -954,8 +953,8 @@ let _ReadActorTargetedConstraint = null;
 function _ReadActorTargetedConstraint15(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-
-	component._TargetIdx = reader.readUint16("targetId") + 1;
+	const tid = reader.readUint16("targetId");
+	component._TargetIdx = tid === 0 ? null : tid + 1;
 }
 
 function _ReadActorTargetedConstraint14(reader, component)
