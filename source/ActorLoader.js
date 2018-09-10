@@ -954,7 +954,7 @@ function _ReadActorTargetedConstraint15(reader, component)
 {
 	_ReadActorConstraint(reader, component);
 	const tid = reader.readUint16("targetId");
-	component._TargetIdx = tid === 0 ? null : tid + 1;
+	component._TargetIdx = tid === 0 ? null : tid;
 }
 
 function _ReadActorTargetedConstraint14(reader, component)
