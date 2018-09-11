@@ -73,14 +73,19 @@ const _BlockTypes = {
 const _Readers = {
 	"bin": {
 		stream: BinaryReader,
-		container: Uint8Array
+		container: Uint8Array,
+		extension: ".nma"
 	},
 	"json": {
 		stream: JSONReader,
-		container: Object
+		container: Object,
+		extension: "nmj"
 	}
 };
 
+let _ReadActorNode = null;
+let _ReadActorTargetedConstraint = null;
+let _ReadAtlasesBlock = null;
 function _ReadNextBlock(reader, error, typesList)
 {
 	if(reader.isEOF())
@@ -121,6 +126,7 @@ function _ReadComponentsBlock(actor, reader)
 	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 	_ReadActorTargetedConstraint = actor.dataVersion >= 15 ? _ReadActorTargetedConstraint15 : _ReadActorTargetedConstraint14;
+	_ReadAtlasesBlock = actor.dataVersion >= 15 ? _ReadAtlasesBlock15 : _ReadAtlasesBlock14;
 
 	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
@@ -605,10 +611,10 @@ function _JpegAtlas(dataRGB, dataAlpha, callback)
 	img.src = URL.createObjectURL(dataRGB);
 }
 
-function _ReadAtlasesBlock(actor, reader, callback)
+function _ReadAtlasesBlock14(actor, reader, callback)
 {
 	// Read atlases.
-	const numAtlases = reader.readUint16Length();
+	let numAtlases = reader.readUint16();
 
 	let waitCount = 0;
 	let loadedCount = 0;
@@ -621,45 +627,78 @@ function _ReadAtlasesBlock(actor, reader, callback)
 		}
 	}
 
-	const readerType = reader.containerType;
 	for(let i = 0; i < numAtlases; i++)
 	{
-		if(readerType === "json")
-		{
-			const b64img = reader.readString();
-			waitCount++;
-			// Build PNG Atlas
-			const img = document.createElement("img");
-			const atlas = {};
-			img.onload = function()
-			{
-				atlas.img = this;
-				loaded();
-			};
-			actor._Atlases.push(atlas);
-			img.src = b64img;
-		}
-		else if (readerType === "bin")
-		{
-			let size = reader.readUint32();
-			const atlasDataRGB = new Uint8Array(size);
-			reader.readRaw(atlasDataRGB, atlasDataRGB.length);
-			const rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
-			
-			let alphaSrc;
-			if(actor.dataVersion <= 14)
-			{
-				size = reader.readUint32();
-				const atlasDataAlpha = new Uint8Array(size);
-				reader.readRaw(atlasDataAlpha, atlasDataAlpha.length);
-				alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});		
-			}
+		let size = reader.readUint32();
+		let atlasDataRGB = new Uint8Array(size);
+		reader.readRaw(atlasDataRGB, atlasDataRGB.length);
 
-			waitCount++;
-			const atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
-			actor._Atlases.push(atlas);
+		size = reader.readUint32();
+		let atlasDataAlpha = new Uint8Array(size);
+		reader.readRaw(atlasDataAlpha, atlasDataAlpha.length);
+
+		let rgbSrc = new Blob([atlasDataRGB], {type: "image/jpeg"});
+		let alphaSrc = new Blob([atlasDataAlpha], {type: "image/jpeg"});
+
+		waitCount++;
+		let atlas = new _JpegAtlas(rgbSrc, alphaSrc, loaded);
+
+		actor._Atlases.push(atlas);//new Blob([atlasDataRGB], {type: "image/jpeg"}));
+	}
+
+	// Return true if we are waiting for atlases
+	return waitCount !== loadedCount;
+}
+
+function _ReadAtlasesBlock15(actor, reader, callback)
+{
+	// Internal Callback
+	function loaded()
+	{
+		loadedCount++;
+		if(loadedCount === waitCount)
+		{
+			callback();
 		}
 	}
+	// ==== 
+	
+	// Read atlases.
+	const isOOB = reader.readBool("isOOB");
+	reader.openArray("data");
+	const numAtlases = reader.readUint16Length();
+
+	let waitCount = 0;
+	let loadedCount = 0;
+
+	for(let i = 0; i < numAtlases; i++)
+	{
+		waitCount++;
+		let readCallback = function(data)
+		{
+			if(data.constructor === Blob)
+			{
+				const atlas = new _JpegAtlas(data, undefined, loaded);
+				actor._Atlases.push(atlas);
+			}
+			else if(data.constructor === String)
+			{
+				const imgElm = document.createElement("img");
+				const atlas = {};
+				imgElm.onload = function()
+				{
+					atlas.img = this;
+					loaded();
+				};
+				actor._Atlases.push(atlas);
+				imgElm.src = data;
+			}
+		};
+
+		reader.readImage(isOOB, readCallback); 
+	}
+
+	reader.closeArray();
 
 	// Return true if we are waiting for atlases
 	return waitCount !== loadedCount;
@@ -700,7 +739,6 @@ function _ReadShot(loader, data, callback)
 
 	if(N !== 78 || I !== 73 || M !== 77 || A !== 65)
 	{
-		console.info("Not a binary file!");
 		const dataView = new DataView(data);
 		const stringData = new TextDecoder("utf-8").decode(dataView);
 		reader = new JSONReader({"container": JSON.parse(stringData)});
@@ -848,8 +886,6 @@ function _ReadActorEvent(reader, component)
 	return component;
 }
 
-let _ReadActorNode = null;
-
 function _ReadActorNode13(reader, component)
 {
 	_ReadActorNode12(reader, component);
@@ -946,8 +982,6 @@ function _ReadActorConstraint(reader, component)
 	component._Strength = reader.readFloat32("strength");
 	component._IsEnabled = reader.readBool("isEnabled");
 }
-
-let _ReadActorTargetedConstraint = null;
 
 // From version 15 on indices are different.
 function _ReadActorTargetedConstraint15(reader, component)

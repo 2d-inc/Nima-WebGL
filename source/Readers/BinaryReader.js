@@ -200,6 +200,33 @@ export default class BinaryReader extends StreamReader
 		return this.readUint8();
 	}
 
+	readImage(isOOB, cb)
+	{
+		if(isOOB)
+		{
+			const image = this.readString();
+			const req = new XMLHttpRequest();
+			req.open("GET", image, true);
+			req.responseType = "blob";
+
+			req.onload = function()
+			{
+				const blob = this.response;
+				cb(blob);
+			};
+			req.send();
+		}
+		else
+		{
+			const size = this.readUint32();
+			const atlasData = new Uint8Array(size);
+			this.readRaw(atlasData, atlasData.length);
+			const blob = new Blob([atlasData], {type: "image/png"});
+
+			cb(blob);
+		}
+	}
+
 	readId()
 	{
 		return this.readUint16();

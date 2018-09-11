@@ -22,6 +22,7 @@ export default class StreamReader
     
     readBool() {}
     readBlockType() {}
+    readImage(isOOB, cb) {}
 
     readId(label) {}
 

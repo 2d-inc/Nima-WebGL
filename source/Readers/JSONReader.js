@@ -176,8 +176,17 @@ export default class JSONReader extends StreamReader
 		let bType;
 		if(next.constructor === Object)
 		{
-			// Objects are serialized with "type" property.
-			const nType = next["type"];
+			const last = this._last;
+			let nType;
+			if(last.constructor === Object)
+			{
+				nType = this._nextKey;
+			}
+			else if(last.constructor === Array)
+			{
+				// Objects are serialized with "type" property.
+				nType = next["type"];
+			}
 			bType = blockTypes[nType] || nType;
 		}
 		else if(next.constructor === Array)
@@ -187,6 +196,28 @@ export default class JSONReader extends StreamReader
 			bType = blockTypes[nKey] || nKey;
 		}
 		return bType;
+	}
+
+	readImage(isOOB, cb)
+	{
+		const image = this.readString();
+		if(isOOB)
+		{
+			const req = new XMLHttpRequest();
+			req.open("GET", image, true);
+			req.responseType = "blob";
+
+			req.onload = function()
+			{
+				const blob = this.response;
+				cb(blob);
+			};
+			req.send();
+		}
+		else
+		{
+			cb(image);
+		}
 	}
 
 	readId(label)
