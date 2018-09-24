@@ -1211,9 +1211,9 @@ function _ReadActorImageSequence(reader, component)
 			offset += uvStride;
 			reader.closeObject();
 		}
+		reader.closeArray();
 	}
 
-	reader.closeArray();
 
 	return component;
 }
