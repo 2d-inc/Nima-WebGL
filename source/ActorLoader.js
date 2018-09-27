@@ -85,7 +85,6 @@ const _Readers = {
 
 let _ReadActorNode = null;
 let _ReadAtlasesBlock = null;
-let _hasOffset = false;
 
 function _ReadNextBlock(reader, error, typesList)
 {
@@ -127,7 +126,6 @@ function _ReadComponentsBlock(actor, reader)
 	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
 	_ReadAtlasesBlock = actor.dataVersion >= 15 ? _ReadAtlasesBlock15 : _ReadAtlasesBlock14;
-	_hasOffset = actor.dataversion >= 15;
 
 	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
@@ -238,11 +236,7 @@ function _ReadAnimationBlock(actor, reader)
 		for(let i = 0; i < numKeyedComponents; i++)
 		{
 			reader.openObject("Node");
-			let componentIndex = reader.readUint16("nodeIndex");
-			if(actor.dataVersion >= 15)
-			{
-				componentIndex += 1;
-			}
+			const componentIndex = reader.readId("nodeIndex");
 			let component = actor._Components[componentIndex];
 			if(!component)
 			{
@@ -792,7 +786,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	component._ParentIdx = reader.readId("parentId", _hasOffset);
+	component._ParentIdx = reader.readId("parentId");
 	return component;
 }
 
@@ -987,7 +981,7 @@ function _ReadActorConstraint(reader, component)
 function _ReadActorTargetedConstraint(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-	component._TargetIdx = reader.readId("targetId", _hasOffset);
+	component._TargetIdx = reader.readId("targetId");
 }
 
 function _ReadActorIKConstraint(reader, component)
@@ -1004,7 +998,7 @@ function _ReadActorIKConstraint(reader, component)
 
 		for(let i = 0; i < numInfluencedBones; i++)
 		{
-			const val = reader.readId("", _hasOffset); // No need for label here either since we're clearing elements from an array.
+			const val = reader.readId(""); // No need for label here either since we're clearing elements from an array.
 			component._InfluencedBones.push(val);
 		}
 	}
@@ -1116,7 +1110,7 @@ function _ReadActorImage(reader, component)
 				reader.openObject("bone");
 				
 				const bind = mat2d.create();
-				const componentIndex = reader.readId("id", _hasOffset);
+				const componentIndex = reader.readId("id");
 				reader.readFloat32Array(bind, "bind");
 				
 				reader.closeObject();
