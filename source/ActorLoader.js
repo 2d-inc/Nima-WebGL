@@ -84,8 +84,9 @@ const _Readers = {
 };
 
 let _ReadActorNode = null;
-let _ReadActorTargetedConstraint = null;
 let _ReadAtlasesBlock = null;
+let _hasOffset = false;
+
 function _ReadNextBlock(reader, error, typesList)
 {
 	if(reader.isEOF())
@@ -125,8 +126,8 @@ function _ReadComponentsBlock(actor, reader)
 	const numNodes = reader.readUint16Length(); // Necessary to avoid misalignment on Binary Reader.
 	const actorComponents = actor._Components;
 	_ReadActorNode = actor.dataVersion >= 13 ? _ReadActorNode13 : _ReadActorNode12;
-	_ReadActorTargetedConstraint = actor.dataVersion >= 15 ? _ReadActorTargetedConstraint15 : _ReadActorTargetedConstraint14;
 	_ReadAtlasesBlock = actor.dataVersion >= 15 ? _ReadAtlasesBlock15 : _ReadAtlasesBlock14;
+	_hasOffset = actor.dataversion >= 15;
 
 	let block = null;
 	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
@@ -791,7 +792,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	component._ParentIdx = reader.readId("parentId");
+	component._ParentIdx = reader.readId("parentId", _hasOffset);
 	return component;
 }
 
@@ -983,19 +984,10 @@ function _ReadActorConstraint(reader, component)
 	component._IsEnabled = reader.readBool("isEnabled");
 }
 
-// From version 15 on indices are different.
-function _ReadActorTargetedConstraint15(reader, component)
+function _ReadActorTargetedConstraint(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-	// const tid = reader.readUint16("targetId");
-	component._TargetIdx = reader.readId("targetId");
-}
-
-function _ReadActorTargetedConstraint14(reader, component)
-{
-	_ReadActorConstraint(reader, component);
-
-	component._TargetIdx = reader.readUint16("targetId");
+	component._TargetIdx = reader.readId("targetId", _hasOffset);
 }
 
 function _ReadActorIKConstraint(reader, component)
@@ -1012,7 +1004,7 @@ function _ReadActorIKConstraint(reader, component)
 
 		for(let i = 0; i < numInfluencedBones; i++)
 		{
-			const val = reader.readUint16() + 1; // No need for label here either since we're clearing elements from an array.
+			const val = reader.readId("", _hasOffset); // No need for label here either since we're clearing elements from an array.
 			component._InfluencedBones.push(val);
 		}
 	}
@@ -1124,7 +1116,7 @@ function _ReadActorImage(reader, component)
 				reader.openObject("bone");
 				
 				const bind = mat2d.create();
-				const componentIndex = reader.readUint16("id") + 1;
+				const componentIndex = reader.readId("id", _hasOffset);
 				reader.readFloat32Array(bind, "bind");
 				
 				reader.closeObject();

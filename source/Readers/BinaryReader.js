@@ -227,9 +227,11 @@ export default class BinaryReader extends StreamReader
 		}
 	}
 
-	readId()
+	readId(label, hasOffset)
 	{
-		return this.readUint16();
+		let id = this.readUint16();
+		id = hasOffset ? id+1 : id;
+		return id;
 	}
 
 	get containerType() { return "bin"; }
