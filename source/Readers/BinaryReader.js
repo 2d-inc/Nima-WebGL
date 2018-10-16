@@ -62,19 +62,9 @@ export default class BinaryReader extends StreamReader
 		return v;
 	}
 
-	readUint32Length()
-	{
-		return this.readUint32();
-	}
-
 	readUint8()
 	{
 		return this.raw[this.readIndex++];
-	}
-
-	readUint8Length() 
-	{
-		return this.readUint8();
 	}
 
 	isEOF()
@@ -111,11 +101,6 @@ export default class BinaryReader extends StreamReader
 		var v = this.dataView.getInt16(this.readIndex, !this.isBigEndian);
 		this.readIndex += 2;
 		return v;
-	}
-
-	readUint16Length()
-	{
-		return this.readUint16();
 	}
 
 	readUint32()
@@ -232,8 +217,22 @@ export default class BinaryReader extends StreamReader
 		return this.readUint16();
 	}
 
-	get containerType() { return "bin"; }
+	readUint8Length() 
+	{
+		return this.readUint8();
+	}
 
+	readUint16Length()
+	{
+		return this.readUint16();
+	}
+
+	readUint32Length()
+	{
+		return this.readUint32();
+	}
+	
+	get containerType() { return "bin"; }
 }
 
 BinaryReader.alignment = 1024;

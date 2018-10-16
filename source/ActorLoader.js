@@ -390,8 +390,8 @@ function _ReadAnimationBlock(actor, reader)
 							for(let l = 0; l < orderedImages; l++)
 							{
 								propertyReader.openObject("frame");
-								const idx = propertyReader.readUint16("index");
-								const order = propertyReader.readUint16("nodeId");
+								const idx = propertyReader.readUint16("nodeIndex");
+								const order = propertyReader.readUint16("order");
 								orderValue.push({
 									componentIdx:idx,
 									value:order
@@ -931,8 +931,8 @@ function _ReadJellyComponent(reader, component)
 	component._EaseOut = reader.readFloat32("easeOut");
 	component._ScaleIn = reader.readFloat32("scaleIn");
 	component._ScaleOut = reader.readFloat32("scaleOut");
-	component._InTargetIdx = reader.readUint16("inTargetId");
-	component._OutTargetIdx = reader.readUint16("outTargetId");
+	component._InTargetIdx = reader.readId("inTargetId");
+	component._OutTargetIdx = reader.readId("outTargetId");
 
 	return component;
 }
