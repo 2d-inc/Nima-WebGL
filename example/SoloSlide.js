@@ -1,11 +1,11 @@
-var SoloSlide = (function ()
+const SoloSlide = (function ()
 {
-	var _ViewCenter = [0.0, 2000.0];
-	var _Scale = 0.2;
-	var _ScreenScale = 1.0;
+	const _ViewCenter = [0.0, 2000.0];
+	const _Scale = 0.2;
+	const _ScreenScale = 1.0;
 
-	var _ScreenMouse = vec2.create();
-	var _WorldMouse = vec2.create();
+	const _ScreenMouse = vec2.create();
+	const _WorldMouse = vec2.create();
 
 	function SoloSlide(canvas)
 	{
@@ -16,7 +16,7 @@ var SoloSlide = (function ()
 		this._SlideAnimation = null;
 		this._SoloSkaterAnimation = null;
 
-		var _This = this;
+		const _This = this;
 
 		_ScheduleAdvance(_This);
 		_Advance(_This);
@@ -52,28 +52,27 @@ var SoloSlide = (function ()
 	{
 		_This.setSize(window.innerWidth, window.innerHeight);
 
-		var now = Date.now();
-		var elapsed = (now - _This._LastAdvanceTime)/1000.0;
+		const now = Date.now();
+		const elapsed = (now - _This._LastAdvanceTime)/1000.0;
 		_This._LastAdvanceTime = now;
 
-		var actor = _This._ActorInstance;
+		const actor = _This._ActorInstance;
 
 		if(_This._AnimationInstance)
 		{
-			var ai = _This._AnimationInstance;
+			const ai = _This._AnimationInstance;
 			ai.time = ai.time + elapsed;
 			ai.apply(_This._ActorInstance, 1.0);
 		}
 
 		if(actor)
 		{
-			var graphics = _This._Graphics;
+			const graphics = _This._Graphics;
 		
-			var w = graphics.viewportWidth;
-			var h = graphics.viewportHeight;
+			const w = graphics.viewportWidth;
+			const h = graphics.viewportHeight;
 
-
-			var vt = _This._ViewTransform;
+			const vt = _This._ViewTransform;
 			vt[0] = _Scale;
 			vt[3] = _Scale;
 			vt[4] = (-_ViewCenter[0] * _Scale + w/2);
@@ -119,8 +118,8 @@ var SoloSlide = (function ()
 
 	SoloSlide.prototype.load = function(url, callback)
 	{
-		var loader = new Nima.ActorLoader();
-		var _This = this;
+		const loader = new Nima.ActorLoader();
+		const _This = this;
 		loader.load(url, function(actor)
 		{
 			if(!actor || actor.error)
@@ -147,7 +146,7 @@ var SoloSlide = (function ()
 		}
 		actor.initialize(this._Graphics);
 
-		var actorInstance = actor.makeInstance();
+		const actorInstance = actor.makeInstance();
 		actorInstance.initialize(this._Graphics);
 		
 		this._Actor = actor;
@@ -158,13 +157,15 @@ var SoloSlide = (function ()
 			actorInstance.initialize(this._Graphics);
 			if(actorInstance._Animations.length)
 			{
-				this._SlideAnimation = actorInstance.getAnimation("Slide");
-				this._SoloSkaterAnimation = actorInstance.getAnimation("Solo Skater");
+				// this._SlideAnimation = actorInstance.getAnimation("Slide");
+				// this._SoloSkaterAnimation = actorInstance.getAnimation("Solo Skater");
+				this._SlideAnimation = actorInstance._Animations[0];
 				this._AnimationInstance = new Nima.AnimationInstance(this._SlideAnimation._Actor, this._SlideAnimation);
 				
 				if(!this._AnimationInstance) 
 				{
-					console.log("NO ANIMATION IN HERE!?"); return;
+					console.log("NO ANIMATION IN HERE!?"); 
+					return;
 				}
 
 			}

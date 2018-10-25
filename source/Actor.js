@@ -181,8 +181,8 @@ export default class Actor extends Dispatcher
 
 	resolveHierarchy(graphics)
 	{
-		let components = this._Components;
-		for(let component of components)
+		const components = this._Components;
+		for(const component of components)
 		{
 			if(component != null)
 			{
@@ -202,7 +202,7 @@ export default class Actor extends Dispatcher
 			}
 		}
 
-		for(let component of components)
+		for(const component of components)
 		{
 			if(component != null)
 			{

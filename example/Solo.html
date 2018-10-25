@@ -8,7 +8,7 @@
     <script src="../build/gl-matrix.js"></script>
 
     <!-- example implementation is in here -->
-    <script src="SoloSlide.js" compile></script>
+    <script src="./SoloSlide.js" compile></script>
 
     <style>
     body
@@ -23,7 +23,7 @@
         function onLoad()
         {
             soloSlide = new SoloSlide(document.getElementById("canvas"));
-            soloSlide.load("SlidingSolo.nima", function(error)
+            soloSlide.load("SlidingSolo_bin.nima", function(error)
                 {
                     if(error)
                     {

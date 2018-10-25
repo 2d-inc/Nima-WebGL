@@ -319,6 +319,7 @@ export default class ActorNode extends ActorComponent
 		this._Opacity = node._Opacity;
 		this._RenderOpacity = node._RenderOpacity;
 		this._OverrideWorldTransform = node._OverrideWorldTransform;
+		this._IsCollapsedVisibility = node._IsCollapsedVisibility;
 	}
 
 	overrideWorldTransform(transform)
