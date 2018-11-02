@@ -228,15 +228,15 @@ function _ReadAnimationBlock(actor, reader)
 		animation._Loop = reader.readBool("isLooping");
 	}
 
-	reader.openArray("KeyedNodes");
+	reader.openArray("keyed");
 	// Read the number of keyed nodes.
 	const numKeyedComponents = reader.readUint16Length();
 	if(numKeyedComponents > 0)
 	{
 		for(let i = 0; i < numKeyedComponents; i++)
 		{
-			reader.openObject("Node");
-			const componentIndex = reader.readId("nodeIndex");
+			reader.openObject("component");
+			const componentIndex = reader.readId("component");
 			let component = actor._Components[componentIndex];
 			if(!component)
 			{
@@ -262,7 +262,6 @@ function _ReadAnimationBlock(actor, reader)
 					animation._Components.push(animatedComponent);
 				}
 
-				reader.openArray("Properties");
 				const props = reader.readUint16Length();
 				for(let j = 0; j < props; j++)
 				{
@@ -316,14 +315,14 @@ function _ReadAnimationBlock(actor, reader)
 					const animatedProperty = new AnimatedProperty(propertyType);
 					animatedComponent._Properties.push(animatedProperty);
 
-					propertyReader.openArray("KeyFrames");
+					propertyReader.openArray("frames");
 					const keyFrameCount = propertyReader.readUint16Length();
 					let lastKeyFrame = null;
 					for(let k = 0; k < keyFrameCount; k++)
 					{
 						const keyFrame = new KeyFrame();
 
-						propertyReader.openObject("KeyFrame");
+						propertyReader.openObject("frame");
 						keyFrame._Time = propertyReader.readFloat64("time");
 
 						// On newer version we write the interpolation first.
@@ -346,14 +345,14 @@ function _ReadAnimationBlock(actor, reader)
 										case KeyFrame.Type.Asymmetric:
 										case KeyFrame.Type.Mirrored:
 										case KeyFrame.Type.Disconnected:
-											keyFrame._InFactor = propertyReader.readFloat64("clampedInFactor");
+											keyFrame._InFactor = propertyReader.readFloat64("inFactor");
 											keyFrame._InValue = propertyReader.readFloat32("inValue");
-											keyFrame._OutFactor = propertyReader.readFloat64("clampedOutFactor");
+											keyFrame._OutFactor = propertyReader.readFloat64("outFactor");
 											keyFrame._OutValue = propertyReader.readFloat32("outValue");
 											break;
 
 										case KeyFrame.Type.Hold:
-											keyFrame._InFactor = propertyReader.readFloat64("clampedInFactor");
+											keyFrame._InFactor = propertyReader.readFloat64("inFactor");
 											keyFrame._InValue = propertyReader.readFloat32("inValue");
 											break;
 
@@ -390,7 +389,7 @@ function _ReadAnimationBlock(actor, reader)
 							for(let l = 0; l < orderedImages; l++)
 							{
 								propertyReader.openObject("frame");
-								const idx = propertyReader.readUint16("nodeIndex");
+								const idx = propertyReader.readUint16("component");
 								const order = propertyReader.readUint16("order");
 								orderValue.push({
 									componentIdx:idx,
@@ -476,7 +475,6 @@ function _ReadAnimationBlock(actor, reader)
 						lastKeyFrame.setNext(null);
 					}
 				}
-				reader.closeArray();
 			}
 			reader.closeObject();
 		}
@@ -786,7 +784,7 @@ function _ReadShot(loader, data, callback)
 function _ReadActorComponent(reader, component)
 {
 	component._Name = reader.readString("name");
-	component._ParentIdx = reader.readId("parentId");
+	component._ParentIdx = reader.readId("parent");
 	return component;
 }
 
@@ -884,7 +882,7 @@ function _ReadActorEvent(reader, component)
 function _ReadActorNode13(reader, component)
 {
 	_ReadActorNode12(reader, component);
-	component._IsCollapsedVisibility = reader.readBool("isCollapsedVisibility");
+	component._IsCollapsedVisibility = reader.readBool("isCollapsed");
 
 	return component;
 }
@@ -919,7 +917,7 @@ function _ReadActorJellyBone(reader, component)
 {
 	_ReadActorComponent(reader, component);
 	component._Opacity = reader.readFloat32("opacity");
-	component._IsCollapsedVisibility = reader.readBool("isCollapsedVisibility");
+	component._IsCollapsedVisibility = reader.readBool("isCollapsed");
 
 	return component;
 }
@@ -931,8 +929,8 @@ function _ReadJellyComponent(reader, component)
 	component._EaseOut = reader.readFloat32("easeOut");
 	component._ScaleIn = reader.readFloat32("scaleIn");
 	component._ScaleOut = reader.readFloat32("scaleOut");
-	component._InTargetIdx = reader.readId("inTargetId");
-	component._OutTargetIdx = reader.readId("outTargetId");
+	component._InTargetIdx = reader.readId("inTarget");
+	component._OutTargetIdx = reader.readId("outTarget");
 
 	return component;
 }
@@ -981,7 +979,7 @@ function _ReadActorConstraint(reader, component)
 function _ReadActorTargetedConstraint(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-	component._TargetIdx = reader.readId("targetId");
+	component._TargetIdx = reader.readId("target");
 }
 
 function _ReadActorIKConstraint(reader, component)
@@ -990,7 +988,7 @@ function _ReadActorIKConstraint(reader, component)
 
 	component._InvertDirection = reader.readBool("isInverted");
 
-	reader.openArray("InfluencedBones");
+	reader.openArray("bones");
 	const numInfluencedBones = reader.readUint8Length();
 	if(numInfluencedBones > 0)
 	{
@@ -1100,7 +1098,7 @@ function _ReadActorImage(reader, component)
 		component._DrawOrder = reader.readUint16("drawOrder");
 		component._AtlasIndex = reader.readUint8("atlas");
 
-		reader.openArray("ConnectedBones");
+		reader.openArray("bones");
 		const numConnectedBones = reader.readUint8Length();
 		if(numConnectedBones > 0)
 		{
@@ -1110,7 +1108,7 @@ function _ReadActorImage(reader, component)
 				reader.openObject("bone");
 				
 				const bind = mat2d.create();
-				const componentIndex = reader.readId("id");
+				const componentIndex = reader.readId("component");
 				reader.readFloat32Array(bind, "bind");
 				
 				reader.closeObject();
@@ -1159,7 +1157,7 @@ function _ReadActorImageSequence(reader, component)
 	// See if it was visible to begin with.
 	if(component._AtlasIndex != -1)
 	{
-		reader.openArray("FrameAssets");
+		reader.openArray("frames");
 		const frameAssetCount = reader.readUint16Length();
 		component._SequenceFrames = [];
 		const uvs = new Float32Array(component._NumVertices*2*frameAssetCount);
@@ -1185,14 +1183,14 @@ function _ReadActorImageSequence(reader, component)
 		for(let i = 1; i < frameAssetCount; i++)
 		{
 
-			reader.openObject("frameAsset");
+			reader.openObject("frames");
 			const frame = {
-				atlas:reader.readUint8("atlasId"),
+				atlas:reader.readUint8("atlas"),
 				offset:offset*4
 			};
 
 			component._SequenceFrames.push(frame);
-			reader.readFloat32ArrayOffset(uvs, uvStride, offset, "frameUV");
+			reader.readFloat32ArrayOffset(uvs, uvStride, offset, "uv");
 
 			offset += uvStride;
 			reader.closeObject();
