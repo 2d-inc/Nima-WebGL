@@ -9,7 +9,6 @@ export default class Graphics
 			preserveDrawingBuffer: true
 		};
 
-
 		let _GL = glOrCanvas instanceof WebGLRenderingContext ? glOrCanvas : glOrCanvas.getContext("webgl", contextOptions) || glOrCanvas.getContext("experimental-webgl", contextOptions);
 		let canvas = glOrCanvas instanceof WebGLRenderingContext ? null : glOrCanvas;
 
@@ -701,6 +700,8 @@ export default class Graphics
 			{
 				_GL.deleteShader(shader);
 			}
+
+			_GL = null;
 		}
 
 		this.loadTexture = _LoadTexture;
@@ -714,6 +715,7 @@ export default class Graphics
 		this.enableMultiplyBlending = _EnableMultiplyBlending;
 		this.enableMod2xBlending = _EnableMod2xBlending;
 		this.clear = _Clear;
+		this.flush = function (){};
 		this.makeVertexBuffer = _MakeVertexBuffer;
 		this.makeIndexBuffer = _MakeIndexBuffer;
 		this.setView = _SetView;
