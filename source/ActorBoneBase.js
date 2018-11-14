@@ -40,4 +40,18 @@ export default class ActorBoneBase extends ActorNode
 		this._Length = node._Length;
 		this._IsConnectedToImage = node._IsConnectedToImage;
 	}
+
+	get firstBone()
+	{
+		let children = this._Children;
+		for(let child of children)
+		{
+			if(child instanceof ActorBoneBase)
+			{
+				return child;
+			}
+		}
+
+		return null;
+	}
 }
