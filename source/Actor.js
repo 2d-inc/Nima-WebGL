@@ -27,6 +27,11 @@ export default class Actor extends Dispatcher
 		this._DirtDepth = 0;
 	}
 
+	get animations()
+	{
+		return this._Animations;
+	}
+
 	addDependency(a, b)
 	{
 		// "a" depends on "b"
