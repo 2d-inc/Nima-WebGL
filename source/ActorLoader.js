@@ -288,7 +288,7 @@ function _ReadAnimationBlock(actor, reader)
 								case _AnimatedPropertyTypes.BooleanProperty:
 								case _AnimatedPropertyTypes.StringProperty:
 								case _AnimatedPropertyTypes.Trigger:
-								case _AnimatedPropertyTypes.ArawOrder:
+								case _AnimatedPropertyTypes.DrawOrder:
 								case _AnimatedPropertyTypes.ActiveChildIndex:
 									// These do not interpolate.
 									break;
