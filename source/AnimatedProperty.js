@@ -1,3 +1,37 @@
+function block(id, key) { return {id,key}; }
+
+const Blocks = 
+{
+	Unknown: block(0, "unknown"),
+	PosX: block(1, "posX"),
+	PosY: block(2, "posY"),
+	ScaleX: block(3, "scaleX"),
+	ScaleY: block(4, "scaleY"),
+	Rotation: block(5, "rotation"),
+	Opacity: block(6, "opacity"),
+	DrawOrder: block(7, "drawOrder"),
+	Length: block(8, "length"),
+	VertexDeform: block(9, "vertices"),
+	ConstraintStrength: block(10, "strength"),
+	Trigger: block(11, "trigger"),
+	IntProperty: block(12, "intValue"),
+	FloatProperty: block(13, "floatValue"),
+	StringProperty: block(14, "stringValue"),
+	BooleanProperty: block(15, "boolValue"),
+	IsCollisionEnabled: block(16, "isCollisionEnabled"),
+	Sequence: block(17, "sequence"),
+	ActiveChildIndex:  block(18, "activeChild")
+};
+
+const _Types = {};
+const _Map = new Map();
+for(const key in Blocks)
+{
+	const value = Blocks[key];
+	_Types[key] = value.id;
+	_Map.set(value.key, value.id);
+}
+
 export default class AnimatedProperty
 {
 	constructor(type)
@@ -5,27 +39,14 @@ export default class AnimatedProperty
 		this._Type = type;
 		this._KeyFrames = [];
 	}
-}
 
-AnimatedProperty.Properties = 
-{
-	"unknown": 0,
-	"posX": 1,
-	"posY": 2,
-	"scaleX": 3,
-	"scaleY": 4,
-	"rotation": 5,
-	"opacity": 6,
-	"drawOrder": 7,
-	"length": 8,
-	"vertices": 9,
-	"strength": 10,
-	"trigger": 11,
-	"intValue": 12,
-	"floatValue": 13,
-	"stringValue": 14,
-	"boolValue": 15,
-	"isCollisionEnabled": 16,
-	"sequence": 17,
-	"activeChild": 18
-};
+    static get Types()
+    {
+        return _Types;
+    }
+
+    static fromString(label)
+    {
+        return _Map.get(label) || 0;
+    }
+}

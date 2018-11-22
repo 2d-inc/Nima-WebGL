@@ -29,47 +29,10 @@ import ActorScaleConstraint from "./ActorScaleConstraint.js";
 import ActorRotationConstraint from "./ActorRotationConstraint.js";
 import KeyFrame from "./KeyFrame.js";
 import {mat2d, vec2} from "gl-matrix";
-
-
+import Block from "./Block.js";
+const _BlockTypes = Block.Types;
+const _AnimatedPropertyTypes = AnimatedProperty.Types;
 const _FirstVersion = 1065353216;
-
-const _BlockTypes = {
-	"nodes":1,
-	"node":2,
-	"bone":3,
-	"rootBone":4,
-	"image":5,
-	"view":6,
-	"animation":7,
-	"animations":8,
-	"atlases":9,
-	"atlas":10,
-	"ikTarget":11,
-	"event":12,
-	"customInt":13,
-	"customFloat":14,
-	"customString":15,
-	"customBool":16,
-	"rectangleCollider":17,
-	"triangleCollider":18,
-	"circleCollider":19,
-	"polygonCollider":20,
-	"lineCollider":21,
-	"imageSequence":22,
-	"solo":23,
-	"nestedNode":24,
-	"nestedAssets":25,
-	"nestedAsset":26,
-	"staticMesh":27,
-	"jelly": 28,
-	"jellyBone": 29,
-	"ikConstraint": 30,
-	"distanceConstraint": 31,
-	"translationConstraint": 32,
-	"rotationConstraint": 33,
-	"scaleConstraint": 34,
-	"transformConstraint": 35
-};
 
 const _Readers = {
 	"bin": {
@@ -87,7 +50,7 @@ const _Readers = {
 let _ReadActorNode = null;
 let _ReadAtlasesBlock = null;
 
-function _ReadNextBlock(reader, error, typesList)
+function _ReadNextBlock(reader, error, block)
 {
 	if(reader.isEOF())
 	{
@@ -98,7 +61,7 @@ function _ReadNextBlock(reader, error, typesList)
 	const streamReader = _Readers[cType];
 	try
 	{
-		blockType = reader.readBlockType(typesList);
+		blockType = reader.readBlockType(block);
 		if(blockType === undefined)
 		{
 			return null;
@@ -129,81 +92,81 @@ function _ReadComponentsBlock(actor, reader)
 	_ReadAtlasesBlock = actor.dataVersion >= 15 ? _ReadAtlasesBlock15 : _ReadAtlasesBlock14;
 
 	let block = null;
-	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
+	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, Block)) !== null)
 	{
 		let component = null;
 		switch(block.type)
 		{
-			case _BlockTypes.customInt:
-			case _BlockTypes.customString:
-			case _BlockTypes.customFloat:
-			case _BlockTypes.customBool:
+			case _BlockTypes.CustomIntProperty:
+			case _BlockTypes.CustomStringProperty:
+			case _BlockTypes.CustomFloatProperty:
+			case _BlockTypes.CustomBooleanProperty:
 				component = _ReadCustomProperty(block.reader, new CustomProperty(), block.type);
 				break;
-			case _BlockTypes.rectangleCollider:
+			case _BlockTypes.ColliderRectangle:
 				component = _ReadRectangleCollider(block.reader, new ActorColliderRectangle());
 				break;
-			case _BlockTypes.triangleCollider:
+			case _BlockTypes.ColliderTriangle:
 				component = _ReadTriangleCollider(block.reader, new ActorColliderTriangle());
 				break;
-			case _BlockTypes.circleCollider:
+			case _BlockTypes.ColliderCircle:
 				component = _ReadCircleCollider(block.reader, new ActorColliderCircle());
 				break;
-			case _BlockTypes.polygonCollider:
+			case _BlockTypes.ColliderPolygon:
 				component = _ReadPolygonCollider(block.reader, new ActorColliderPolygon());
 				break;
-			case _BlockTypes.lineCollider:
+			case _BlockTypes.ColliderLine:
 				component = _ReadLineCollider(block.reader, new ActorColliderLine());
 				break;
-			case _BlockTypes.event:
+			case _BlockTypes.ActorEvent:
 				component = _ReadActorEvent(block.reader, new ActorEvent());
 				break;
-			case _BlockTypes.node:
+			case _BlockTypes.ActorNode:
 				component = _ReadActorNode(block.reader, new ActorNode());
 				break;
-			case _BlockTypes.bone:
+			case _BlockTypes.ActorBone:
 				component = _ReadActorBone(block.reader, new ActorBone());
 				break;
-			case _BlockTypes.jellyBone:
+			case _BlockTypes.ActorJellyBone:
 				component = _ReadActorJellyBone(block.reader, new ActorJellyBone());
 				break;
-			case _BlockTypes.jelly:
+			case _BlockTypes.JellyComponent:
 				component = _ReadJellyComponent(block.reader, new JellyComponent());
 				break;
-			case _BlockTypes.rootBone:
+			case _BlockTypes.ActorRootBone:
 				component = _ReadActorRootBone(block.reader, new ActorRootBone());
 				break;
-			case _BlockTypes.image:
+			case _BlockTypes.ActorImage:
 				component = _ReadActorImage(block.reader, new ActorImage());
 				break;
-			case _BlockTypes.imageSequence:
+			case _BlockTypes.ActorImageSequence:
 				component = _ReadActorImageSequence(block.reader, new ActorImage());
 				break;
-			case _BlockTypes.ikTarget:
+			case _BlockTypes.ActorIKTarget:
 				component = _ReadActorIKTarget(actor.dataVersion, block.reader, new ActorIKTarget());
 				break;
-			case _BlockTypes.nestedNode:
+			case _BlockTypes.NestedActorNode:
 				component = _ReadNestedActor(block.reader, new NestedActorNode(), actor._NestedActorAssets);
 				break;
-			case _BlockTypes.solo:
+			case _BlockTypes.ActorNodeSolo:
 				component = _ReadActorNodeSolo(block.reader, new ActorNodeSolo());
 				break;
-			case _BlockTypes.ikConstraint:
+			case _BlockTypes.ActorIKConstraint:
 				component = _ReadActorIKConstraint(block.reader, new ActorIKConstraint());
 				break;
-			case _BlockTypes.distanceConstraint:
+			case _BlockTypes.ActorDistanceConstraint:
 				component = _ReadActorDistanceConstraint(block.reader, new ActorDistanceConstraint());
 				break;
-			case _BlockTypes.transformConstraint:
+			case _BlockTypes.ActorTransformConstraint:
 				component = _ReadActorTransformConstraint(block.reader, new ActorTransformConstraint());
 				break;
-			case _BlockTypes.translationConstraint:
+			case _BlockTypes.ActorTranslationConstraint:
 				component = _ReadAxisConstraint(block.reader, new ActorTranslationConstraint());
 				break;
-			case _BlockTypes.scaleConstraint:
+			case _BlockTypes.ActorScaleConstraint:
 				component = _ReadAxisConstraint(block.reader, new ActorScaleConstraint());
 				break;
-			case _BlockTypes.rotationConstraint:
+			case _BlockTypes.ActorRotationConstraint:
 				component = _ReadRotationConstraint(block.reader, new ActorRotationConstraint());
 				break;
 		}
@@ -269,41 +232,31 @@ function _ReadAnimationBlock(actor, reader)
 					let propertyReader = null;
 					let propertyType;
 
-					if(actor.dataVersion >= 12)
-					{
-						// Since version 12 we write properties as blocks in order to allow for reading past unknown animated properties
-						let propertyBlock = _ReadNextBlock(reader, function(err) {actor.error = err;}, AnimatedProperty.Properties);
-						propertyReader = propertyBlock.reader;
-						propertyType = propertyBlock.type;
-					}
-					else
-					{
-						propertyReader = reader;
-						// propertyType = reader.readUint8();
-						propertyType = reader.readBlockType(AnimatedProperty.Properties);
-					}
+					let propertyBlock = _ReadNextBlock(reader, function(err) {actor.error = err;}, AnimatedProperty);
+					propertyReader = propertyBlock.reader;
+					propertyType = propertyBlock.type;
 
 					let validProperty = false;
 					switch(propertyType)
 					{
-						case AnimatedProperty.Properties.posX:
-						case AnimatedProperty.Properties.posY:
-						case AnimatedProperty.Properties.scaleX:
-						case AnimatedProperty.Properties.scaleY:
-						case AnimatedProperty.Properties.rotation:
-						case AnimatedProperty.Properties.opacity:
-						case AnimatedProperty.Properties.drawOrder:
-						case AnimatedProperty.Properties.length:
-						case AnimatedProperty.Properties.vertices:
-						case AnimatedProperty.Properties.strength:
-						case AnimatedProperty.Properties.trigger:
-						case AnimatedProperty.Properties.intValue:
-						case AnimatedProperty.Properties.floatValue:
-						case AnimatedProperty.Properties.stringValue:
-						case AnimatedProperty.Properties.boolValue:
-						case AnimatedProperty.Properties.isCollisionEnabled:
-						case AnimatedProperty.Properties.sequence:
-						case AnimatedProperty.Properties.activeChild:
+						case _AnimatedPropertyTypes.PosX:
+						case _AnimatedPropertyTypes.PosY:
+						case _AnimatedPropertyTypes.ScaleX:
+						case _AnimatedPropertyTypes.ScaleY:
+						case _AnimatedPropertyTypes.Rotation:
+						case _AnimatedPropertyTypes.Opacity:
+						case _AnimatedPropertyTypes.DrawOrder:
+						case _AnimatedPropertyTypes.Length:
+						case _AnimatedPropertyTypes.VertexDeform:
+						case _AnimatedPropertyTypes.ConstraintStrength:
+						case _AnimatedPropertyTypes.Trigger:
+						case _AnimatedPropertyTypes.IntProperty:
+						case _AnimatedPropertyTypes.FloatProperty:
+						case _AnimatedPropertyTypes.StringProperty:
+						case _AnimatedPropertyTypes.BooleanProperty:
+						case _AnimatedPropertyTypes.IsCollisionEnabled:
+						case _AnimatedPropertyTypes.Sequence:
+						case _AnimatedPropertyTypes.ActiveChildIndex:
 							validProperty = true;
 							break;
 						default:
@@ -331,12 +284,12 @@ function _ReadAnimationBlock(actor, reader)
 						{
 							switch(propertyType)
 							{
-								case AnimatedProperty.Properties.isCollisionEnabled:
-								case AnimatedProperty.Properties.boolValue:
-								case AnimatedProperty.Properties.stringValue:
-								case AnimatedProperty.Properties.trigger:
-								case AnimatedProperty.Properties.drawOrder:
-								case AnimatedProperty.Properties.activeChild:
+								case _AnimatedPropertyTypes.IsCollisionEnabled:
+								case _AnimatedPropertyTypes.BooleanProperty:
+								case _AnimatedPropertyTypes.StringProperty:
+								case _AnimatedPropertyTypes.Trigger:
+								case _AnimatedPropertyTypes.ArawOrder:
+								case _AnimatedPropertyTypes.ActiveChildIndex:
 									// These do not interpolate.
 									break;
 								default:
@@ -352,7 +305,7 @@ function _ReadAnimationBlock(actor, reader)
 											keyFrame._OutValue = propertyReader.readFloat32("outValue");
 											break;
 
-										case KeyFrame.Type.Hold:
+									case KeyFrame.Type.Hold:
 											keyFrame._InFactor = propertyReader.readFloat64("inFactor");
 											keyFrame._InValue = propertyReader.readFloat32("inValue");
 											break;
@@ -366,23 +319,23 @@ function _ReadAnimationBlock(actor, reader)
 							}
 						}
 
-						if(propertyType === AnimatedProperty.Properties.trigger)
+						if(propertyType === _AnimatedPropertyTypes.Trigger)
 						{
 							// No value on keyframe.
 						}
-						else if (propertyType === AnimatedProperty.Properties.intValue)
+						else if (propertyType === _AnimatedPropertyTypes.IntProperty)
 						{
 							keyFrame._Value = propertyReader.readInt32("value");
 						}
-						else if (propertyType === AnimatedProperty.Properties.stringValue)
+						else if (propertyType === _AnimatedPropertyTypes.StringProperty)
 						{
 							keyFrame._Value = propertyReader.readString("value");
 						}
-						else if (propertyType === AnimatedProperty.Properties.boolValue || propertyType === AnimatedProperty.Properties.isCollisionEnabled)
+						else if (propertyType === _AnimatedPropertyTypes.BooleanProperty || propertyType === _AnimatedPropertyTypes.IsCollisionEnabled)
 						{
 							keyFrame._Value = propertyReader.readBool("value");
 						}
-						else if (propertyType === AnimatedProperty.Properties.drawOrder)
+						else if (propertyType === _AnimatedPropertyTypes.DrawOrder)
 						{
 							propertyReader.openArray("drawOrder");
 							const orderedImages = propertyReader.readUint16Length();
@@ -401,7 +354,7 @@ function _ReadAnimationBlock(actor, reader)
 							propertyReader.closeArray();
 							keyFrame._Value = orderValue;
 						}
-						else if (propertyType === AnimatedProperty.Properties.vertices)
+						else if (propertyType === _AnimatedPropertyTypes.VertexDeform)
 						{
 							keyFrame._Value = new Float32Array(component._NumVertices * 2);
 							component.hasVertexDeformAnimation = true;
@@ -452,12 +405,12 @@ function _ReadAnimationBlock(actor, reader)
 									break;
 							}
 						}
-						if (propertyType === AnimatedProperty.Properties.drawOrder)
+						if (propertyType === _AnimatedPropertyTypes.DrawOrder)
 						{
 							// Always hold draw order.
 							keyFrame._Type = KeyFrame.Type.Hold;
 						}
-						else if (propertyType === AnimatedProperty.Properties.vertices)
+						else if (propertyType === _AnimatedPropertyTypes.VertexDeform)
 						{
 							keyFrame._Type = KeyFrame.Type.Linear;
 						}
@@ -498,11 +451,11 @@ function _ReadAnimationsBlock(actor, reader)
 	const animationsCount = reader.readUint16Length(); // Align the block reader when Binary.
 	let block = null;
 	// The animations block only contains a list of animations, so we don't need to track how many we've read in.
-	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
+	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, Block)) !== null)
 	{
 		switch(block.type)
 		{
-			case _BlockTypes.animation:
+			case _BlockTypes.Animation:
 				_ReadAnimationBlock(actor, block.reader);
 				break;
 		}
@@ -519,11 +472,11 @@ function _ReadNestedActorAssets(actor, reader)
 {
 	const nestedActorCount = reader.readUint16();
 	let block = null;
-	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
+	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, Block)) !== null)
 	{
 		switch(block.type)
 		{
-			case _BlockTypes.nestedAsset:
+			case _BlockTypes.NestedActorAsset:
 				_ReadNestedActorAssetBlock(actor, block.reader);
 				break;
 		}
@@ -739,18 +692,19 @@ function _ReadShot(loader, data, callback)
 	}
 
 	const version = reader.readUint32("version");
+	
 	const actor = new Actor();
 	actor.dataVersion = version === _FirstVersion ? 1 : version;
 	let block = null;
 	let waitForAtlas = false;
-	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, _BlockTypes)) !== null)
+	while((block=_ReadNextBlock(reader, function(err) {actor.error = err;}, Block)) !== null)
 	{
 		switch(block.type)
 		{
-			case _BlockTypes.nodes:
+			case _BlockTypes.Nodes:
 				_ReadComponentsBlock(actor, block.reader);
 				break;
-			case _BlockTypes.view:
+			case _BlockTypes.View:
 				actor._ViewCenter = vec2.create();
 				// block.reader.readFloat32Array(actor._ViewCenter);
 				actor._ViewCenter[0] = block.reader.readFloat32("x");
@@ -758,10 +712,10 @@ function _ReadShot(loader, data, callback)
 				actor._ViewWidth = block.reader.readFloat32("width");
 				actor._ViewHeight = block.reader.readFloat32("height");
 				break;
-			case _BlockTypes.animations:
+			case _BlockTypes.Animations:
 				_ReadAnimationsBlock(actor, block.reader);
 				break;
-			case _BlockTypes.atlases:
+			case _BlockTypes.Atlases:
 
 				if(_ReadAtlasesBlock(actor, block.reader, function()
 					{
@@ -771,7 +725,7 @@ function _ReadShot(loader, data, callback)
 					waitForAtlas = true;
 				}
 				break;
-			case _BlockTypes.nestedAssets:
+			case _BlockTypes.NestedActorAssets:
 				_ReadNestedActorAssets(actor, block.reader);
 				break;
 		}
@@ -795,19 +749,19 @@ function _ReadCustomProperty(reader, component, type)
 
 	switch(type)
 	{
-		case _BlockTypes.customInt:
+		case _BlockTypes.CustomIntProperty:
 			component._PropertyType = CustomProperty.Type.Integer;
 			component._Value = reader.readInt32("int");
 			break;
-		case _BlockTypes.customFloat:
+		case _BlockTypes.CustomFloatProperty:
 			component._PropertyType = CustomProperty.Type.Float;
 			component._Value = reader.readFloat32("float");
 			break;
-		case _BlockTypes.customString:
+		case _BlockTypes.CustomStringProperty:
 			component._PropertyType = CustomProperty.Type.String;
 			component._Value = reader.readString("string");
 			break;
-		case _BlockTypes.customBool:
+		case _BlockTypes.CustomBooleanProperty:
 			component._PropertyType = CustomProperty.Type.Boolean;
 			component._Value = reader.readBool("bool");
 			break;
@@ -980,7 +934,7 @@ function _ReadActorConstraint(reader, component)
 function _ReadActorTargetedConstraint(reader, component)
 {
 	_ReadActorConstraint(reader, component);
-	component._TargetIdx = reader.readId("targetId");
+	component._TargetIdx = reader.readId("target");
 }
 
 function _ReadActorIKConstraint(reader, component)

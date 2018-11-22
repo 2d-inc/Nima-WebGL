@@ -1,5 +1,6 @@
 import AnimatedProperty from "./AnimatedProperty.js";
 import ActorBone from "./ActorBone.js";
+const AnimatedPropertyTypes = AnimatedProperty.Types;
 
 function keyFrameLocation(seconds, list, start, end)
 {
@@ -58,7 +59,7 @@ export default class Animation
 				let property = properties[j];
 				switch(property._Type)
 				{
-					case AnimatedProperty.Properties.trigger:
+					case AnimatedPropertyTypes.Trigger:
 					{
 						let keyFrames = property._KeyFrames;
 
@@ -172,7 +173,7 @@ export default class Animation
 				let markDirty = false;
 				switch(property._Type)
 				{
-					case AnimatedProperty.Properties.posX:
+					case AnimatedPropertyTypes.PosX:
 						if(mix === 1.0)
 						{
 							component._Translation[0] = value;	
@@ -184,7 +185,7 @@ export default class Animation
 						
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.posY:
+					case AnimatedPropertyTypes.PosY:
 						if(mix === 1.0)
 						{
 							component._Translation[1] = value;
@@ -195,7 +196,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.scaleX:
+					case AnimatedPropertyTypes.ScaleX:
 						if(mix === 1.0)
 						{
 							component._Scale[0] = value;
@@ -206,7 +207,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.scaleY:
+					case AnimatedPropertyTypes.ScaleY:
 						if(mix === 1.0)
 						{
 							component._Scale[1] = value;
@@ -217,7 +218,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.rotation:
+					case AnimatedPropertyTypes.Rotation:
 						if(mix === 1.0)
 						{
 							component._Rotation = value;
@@ -228,7 +229,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.opacity:
+					case AnimatedPropertyTypes.Opacity:
 						if(mix === 1.0)
 						{
 							component._Opacity = value;
@@ -239,7 +240,7 @@ export default class Animation
 						}
 						markDirty = true;
 						break;
-					case AnimatedProperty.Properties.strength:
+					case AnimatedPropertyTypes.ConstraintStrength:
 						if(mix === 1.0)
 						{
 							component.strength = value;
@@ -249,7 +250,7 @@ export default class Animation
 							component.strength = component._Strength * imix + value * mix;	
 						}
 						break;
-					case AnimatedProperty.Properties.drawOrder:
+					case AnimatedPropertyTypes.DrawOrder:
 						if(actor._LastSetDrawOrder != value)
 						{
 							actor._LastSetDrawOrder = value;
@@ -261,7 +262,7 @@ export default class Animation
 							actor._IsImageSortDirty = true;
 						}
 						break;
-					case AnimatedProperty.Properties.length:
+					case AnimatedPropertyTypes.Length:
 						markDirty = true;
 						if(mix === 1.0)
 						{
@@ -282,7 +283,7 @@ export default class Animation
 							}
 						}
 						break;
-					case AnimatedProperty.Properties.vertices:
+					case AnimatedPropertyTypes.VertexDeform:
 					{
 						component._VerticesDirty = true;
 						let nv = component._NumVertices;
@@ -309,10 +310,10 @@ export default class Animation
 						}
 						break;
 					}
-					case AnimatedProperty.Properties.stringValue:
+					case AnimatedPropertyTypes.StringProperty:
 						component._Value = value;
 						break;
-					case AnimatedProperty.Properties.intValue:
+					case AnimatedPropertyTypes.IntProperty:
 						if(mix === 1.0)
 						{
 							component._Value = value;	
@@ -322,7 +323,7 @@ export default class Animation
 							component._Value = Math.round(component._Value * imix + value * mix);
 						}
 						break;
-					case AnimatedProperty.Properties.floatValue:
+					case AnimatedPropertyTypes.FloatProperty:
 						if(mix === 1.0)
 						{
 							component._Value = value;	
@@ -332,13 +333,13 @@ export default class Animation
 							component._Value = component._Value * imix + value * mix;
 						}
 						break;
-					case AnimatedProperty.Properties.boolValue:
+					case AnimatedPropertyTypes.BooleanProperty:
 						component._Value = value;
 						break;
-					case AnimatedProperty.Properties.isCollisionEnabled:
+					case AnimatedPropertyTypes.IsCollisionEnabled:
 						component._IsCollisionEnabled = value;
 						break;
-					case AnimatedProperty.Properties.sequence:
+					case AnimatedPropertyTypes.Sequence:
 						if(component._SequenceFrames)
 						{
 							var frameIndex = Math.floor(value)%component._SequenceFrames.length;
@@ -350,7 +351,7 @@ export default class Animation
 						}
 						break;
 
-					case AnimatedProperty.Properties.activeChild:
+					case AnimatedPropertyTypes.ActiveChildIndex:
 						component.activeChildIndex = value;
 						markDirty = true;
 						break;

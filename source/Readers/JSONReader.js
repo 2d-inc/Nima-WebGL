@@ -170,7 +170,7 @@ export default class JSONReader extends StreamReader
 		}
 	}
 
-	readBlockType(blockTypes)
+	readBlockType(block)
 	{
 		const next = this._peekNext();
 		let bType;
@@ -187,13 +187,13 @@ export default class JSONReader extends StreamReader
 				// Objects are serialized with "type" property.
 				nType = next["type"];
 			}
-			bType = blockTypes[nType] || nType;
+			bType = block.fromString(nType) || nType;
 		}
 		else if(next.constructor === Array)
 		{
 			// Arrays are serialized as "type": [Array].
 			const nKey = this._nextKey;
-			bType = blockTypes[nKey] || nKey;
+			bType = block.fromString(nKey) || nKey;
 		}
 		return bType;
 	}
