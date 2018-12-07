@@ -6,27 +6,7 @@
 
     <script src="../build/Nima.min.js"></script>
     <script src="../build/gl-matrix.js"></script>
-    <!-- If you want to use the minified version...
-    <script src="../source/gl-matrix.js"></script>
-    <script src="../build/Nima.min.js"></script>
-    -->
-    <!--<script src="../source/gl-matrix.js"></script>
 
-    <script src="../source/Dispatcher.js" compile></script>
-    <script src="../source/Graphics.js" compile></script>
-    <script src="../source/BinaryReader.js" compile></script>
-    <script src="../source/ActorLoader.js" compile></script>
-    <script src="../source/Actor.js" compile></script>
-    <script src="../source/ActorComponent.js" compile></script>
-    <script src="../source/ActorEvent.js" compile></script>
-    <script src="../source/CustomProperty.js" compile></script>
-    <script src="../source/ActorNode.js" compile></script>
-    <script src="../source/ActorImage.js" compile></script>
-    <script src="../source/ActorBone.js" compile></script>
-    <script src="../source/ActorRootBone.js" compile></script>
-    <script src="../source/ActorIKTarget.js" compile></script>
-    <script src="../source/Animation.js" compile></script>
-    <script src="../source/BezierAnimationCurve.js" compile></script>-->
 
     <!-- example implementation is in here -->
     <script src="Archer.js" compile></script>
@@ -44,7 +24,7 @@
         function onLoad()
         {
             archer = new Archer(document.getElementById("canvas"));
-            archer.load("Archer.nima", function(error)
+            archer.load("Archer.nma", function(error)
                 {
                     if(error)
                     {
