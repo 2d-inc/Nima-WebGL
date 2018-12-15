@@ -439,8 +439,6 @@ function _ReadAnimationBlock(actor, reader)
 		{
 			animation._FPS  = reader.readUint8();
 		}
-		animation._DisplayStart = reader.readFloat32("animationStart");
-		animation._DisplayEnd = reader.readFloat32("animationEnd");
 		//animation._DisplayStart = 0;
 		//animation._DisplayEnd = 50/60;
 	}
